@@ -1,0 +1,116 @@
+import os
+
+
+# set configuration
+# defaultextension	unused
+# files				list of all files that will be used for configuration. high indicies overwrite low indicies
+# comment			symbols that indicate comments. careful!
+# category			symbols that indicate start and end of category name. only works at start of line
+# onlytext			interpret everything as a string. if False, strings can be put into quotes to avoid confusion
+def config(defaultextension=".ini",files=["settings.ini","settings.conf","configuration.ini","configuration.conf"],
+			comment=["#","//"],category=("[","]"),onlytext=False):
+	global _defaultextension, _files, _comment, _category, _onlytext
+	_defaultextension = defaultextension
+	_files = files
+	_comment = comment
+	_category = category
+	_onlytext = onlytext
+
+# initial config on import, set everything to default
+config()
+
+
+
+
+
+# manager object so we can read settings once and retain them
+class Settings:
+	def __init__(self,**kwargs):
+		self.settings = get_settings(**kwargs)
+
+	def get(self,key):
+		return self.settings.get(key)
+
+
+
+
+def _interpret(text):
+	if _onlytext: return text
+
+	if text.lower() in ["true","yes"]: return True
+	if text.lower() in ["false","no"]: return False
+	if text.startswith("'") and text.endswith("'"): return text[1:-1]
+	if text.startswith('"') and text.endswith('"'): return text[1:-1]
+	try:
+		return int(text)
+	except:
+		pass
+	try:
+		return float(text)
+	except:
+		pass
+	return text
+
+
+# get settings
+# keys			list of requested keys. if present, will return list of according values, if not, will return dict of key-value pairs
+# files			which files to parse. later files (higher indicies) will overload earlier ones
+# prefix		only request keys with a certain prefix. key filter will still be applied if present
+# cut_prefix	return keys without the prefix
+# category		return only keys of specific category
+def get_settings(*keys,files=_files,prefix="",cut_prefix=False,category=None):
+
+	allsettings = {}
+
+	for f in files:
+		if not os.path.exists(f): continue
+
+		# if category is specified, ignore all entries by default and switch when we encounter the right heading
+		ignore = False if category is None else True
+
+		with open(f) as file:
+			lines = file.readlines()
+			for l in lines:
+				# clean up line
+				l = l.replace("\n","")
+				for symbol in _comment:
+					l = l.split(symbol)[0]
+				l = l.strip()
+
+				# check if valid settings entry
+				if l == "": continue
+				if l.startswith(_category[0]):
+					# ignore category headers if we don't care
+					if category is None: continue
+					# otherwise, find out if this is the category we want
+					else:
+						if l.endswith(_category[1]):
+							cat = l[len(_category[0]):-len(_category[1])]
+							ignore = not (cat == category) #if this is the right heading, set ignore to false
+						continue
+
+				if ignore: continue
+
+				if "=" not in l: continue
+
+				# read
+				(key,val) = l.split("=")
+				key = key.strip()
+				val = _interpret(val.strip())
+
+				if key.startswith(prefix):
+					# return keys without the common prefix
+					if cut_prefix:
+						allsettings[key[len(prefix):]] = val
+
+					# return full keys
+					else:
+						allsettings[key] = val
+
+	# no arguments means all settings
+	if len(keys) == 0:
+		return allsettings
+
+	# specific keys requested
+	else:
+		return [allsettings[k] for k in keys]
