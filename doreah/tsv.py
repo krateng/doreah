@@ -12,6 +12,8 @@ def config(defaultextension=".tsv",comments=True,multitab=True):
 	_multitab = multitab
 
 
+# initial config on import, set everything to default
+config()
 
 
 def parse(filename,*args,comments=_comments,multitab=_multitab):
@@ -106,7 +108,3 @@ def add_entries(filename,al,comments=_comments):
 			line = "\t".join([str(e).replace("\t"," ") for e in a])
 			if comments: line = line.replace("#",r"\num")
 			f.write(line + "\n")
-
-
-# initial config on import, set everything to default
-config()

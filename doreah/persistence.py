@@ -9,6 +9,9 @@ def config(folder="storage"):
 	global _folder
 	_folder = folder
 
+# initial config on import, set everything to default
+config()
+
 
 def save(data,name,folder=_folder):
 
@@ -31,8 +34,3 @@ def load(name,folder=_folder):
 		fl.close()
 
 	return ob
-
-
-
-# initial config on import, set everything to default
-config()

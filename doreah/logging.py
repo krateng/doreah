@@ -18,7 +18,11 @@ def config(logfolder="logs",timeformat="%Y/%m/%d %H:%M:%S",defaultmodule="main",
 	_wait = wait
 
 
-	
+# initial config on import, set everything to default
+config()
+
+
+
 # Log entry
 # module	allows discrimination between modules of a program. Will be prepended in console output and will determine the separate file for disk storage
 # 		defaults to actual name of the calling module or "main" for the main script
@@ -28,22 +32,22 @@ def config(logfolder="logs",timeformat="%Y/%m/%d %H:%M:%S",defaultmodule="main",
 def log(*msgs,module=None,header=None,indent=0,importance=0):
 
 	now = datetime.datetime.utcnow().strftime(_timeformat)
-	
+
 	# log() can be used to add empty line
 	if len(msgs) == 0: msgs = ("",)
-	
+
 	# make it easier to log data structures and such
 	msgs = tuple([str(msg) for msg in msgs])
-	
+
 	# header formating
 	if header == 2:
 		msgs = ("","","####") + msgs + ("####","")
 	elif header == 1:
 		msgs = ("","","","# # # # #","") + msgs + ("","# # # # #","","")
-			
+
 	# indent
 	prefix = "\t" * indent
-	
+
 	# module name
 	if module is None:
 		try:
@@ -51,7 +55,7 @@ def log(*msgs,module=None,header=None,indent=0,importance=0):
 			if module == "__main__": module = "main"
 		except:
 			module = "interpreter"
-	
+
 	global _wait, _queue
 	if _wait:
 		for msg in msgs:
@@ -61,22 +65,22 @@ def log(*msgs,module=None,header=None,indent=0,importance=0):
 		if (importance <= _verbosity):
 			for msg in msgs:
 				print("[" + module + "] " + prefix + msg)
-		
+
 		# file output
 		logfilename = _logfolder + "/" + module + ".log"
 		os.makedirs(os.path.dirname(logfilename), exist_ok=True)
 		with open(logfilename,"a") as logfile:
 			for msg in msgs:
 				logfile.write(now + "  " + prefix + msg + "\n")
-			
-			
+
+
 def flush():
 	global _queue
 	for entry in _queue:
 		# console output
 		if entry["console"]:
 			print("[" + entry["module"] + "] " + entry["prefix"] + entry["msg"])
-		
+
 		# file output
 		logfilename = _logfolder + "/" + entry["module"] + ".log"
 		os.makedirs(os.path.dirname(logfilename), exist_ok=True)
@@ -88,8 +92,3 @@ def logh1(*args,**kwargs):
 	return log(*args,**kwargs,header=1)
 def logh2(*args,**kwargs):
 	return log(*args,**kwargs,header=2)
-	
-
-
-# initial config on import, set everything to default
-config()
