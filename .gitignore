@@ -1,1 +1,6 @@
-__pycache__
+*
+!README
+!LICENSE
+!doreah/
+!.gitignore
+*.pyc

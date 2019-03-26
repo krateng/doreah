@@ -1,5 +1,5 @@
 import os
-
+import shutil
 
 # set configuration
 # defaultextension	unused
@@ -58,7 +58,8 @@ def _interpret(text):
 # prefix		only request keys with a certain prefix. key filter will still be applied if present
 # cut_prefix	return keys without the prefix
 # category		return only keys of specific category
-def get_settings(*keys,files=_files,prefix="",cut_prefix=False,category=None):
+# raw			do not interpret data type, only return strings
+def get_settings(*keys,files=_files,prefix="",cut_prefix=False,category=None,raw=False):
 
 	allsettings = {}
 
@@ -70,42 +71,44 @@ def get_settings(*keys,files=_files,prefix="",cut_prefix=False,category=None):
 
 		with open(f) as file:
 			lines = file.readlines()
-			for l in lines:
-				# clean up line
-				l = l.replace("\n","")
-				for symbol in _comment:
-					l = l.split(symbol)[0]
-				l = l.strip()
 
-				# check if valid settings entry
-				if l == "": continue
-				if l.startswith(_category[0]):
-					# ignore category headers if we don't care
-					if category is None: continue
-					# otherwise, find out if this is the category we want
-					else:
-						if l.endswith(_category[1]):
-							cat = l[len(_category[0]):-len(_category[1])]
-							ignore = not (cat == category) #if this is the right heading, set ignore to false
-						continue
 
-				if ignore: continue
+		for l in lines:
+			# clean up line
+			l = l.replace("\n","")
+			for symbol in _comment:
+				l = l.split(symbol)[0]
+			l = l.strip()
 
-				if "=" not in l: continue
+			# check if valid settings entry
+			if l == "": continue
+			if l.startswith(_category[0]):
+				# ignore category headers if we don't care
+				if category is None: continue
+				# otherwise, find out if this is the category we want
+				else:
+					if l.endswith(_category[1]):
+						cat = l[len(_category[0]):-len(_category[1])]
+						ignore = not (cat == category) #if this is the right heading, set ignore to false
+					continue
 
-				# read
-				(key,val) = l.split("=")
-				key = key.strip()
-				val = _interpret(val.strip())
+			if ignore: continue
 
-				if key.startswith(prefix):
-					# return keys without the common prefix
-					if cut_prefix:
-						allsettings[key[len(prefix):]] = val
+			if "=" not in l: continue
 
-					# return full keys
-					else:
-						allsettings[key] = val
+			# read
+			(key,val) = l.split("=")
+			key = key.strip()
+			val = val.strip() if raw else _interpret(val.strip())
+
+			if key.startswith(prefix):
+				# return keys without the common prefix
+				if cut_prefix:
+					allsettings[key[len(prefix):]] = val
+
+				# return full keys
+				else:
+					allsettings[key] = val
 
 	# no arguments means all settings
 	if len(keys) == 0:
@@ -114,3 +117,66 @@ def get_settings(*keys,files=_files,prefix="",cut_prefix=False,category=None):
 	# specific keys requested
 	else:
 		return [allsettings[k] for k in keys]
+
+
+def set_settings(file,settings):
+
+	if not os.path.exists(file): return
+
+	with open(file,"r") as origfile:
+		lines = origfile.readlines()
+
+	newlines = []
+
+	for origline in lines:
+		l = origline
+		# clean up line
+		l = l.replace("\n","")
+		for symbol in _comment:
+			l = l.split(symbol)[0]
+		l = l.strip()
+
+		# check if valid settings entry
+		if l == "":
+			newlines.append(origline)
+			continue
+		if l.startswith(_category[0]):
+			newlines.append(origline)
+			continue
+		if "=" not in l:
+			newlines.append(origline)
+			continue
+
+		# read
+		(key,val) = l.split("=")
+		key = key.strip()
+		val = val.strip()
+
+
+		if key not in settings:
+			newlines.append(origline)
+			continue
+
+		else:
+			#print("Found key")
+			newline = origline.split("=",1)
+			#print({"linepart":newline[1],"keytoreplace":val,"new":settings[key]})
+			newline[1] = newline[1].replace(val,str(settings[key]))
+			newline = "=".join(newline)
+			newlines.append(newline)
+
+	with open(file,"w") as newfile:
+		newfile.write("".join(newlines))
+
+
+
+
+# updates a user settings file to a newer format from a default file without overwriting user's settings
+def update(source="default_settings.ini",target="settings.ini"):
+
+	if not os.path.exists(target):
+		shutil.copyfile(source,target)
+	else:
+		usersettings = get_settings(files=[target],raw=True)
+		shutil.copyfile(source,target)
+		set_settings(target,usersettings)
