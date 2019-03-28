@@ -25,8 +25,10 @@ def config(defaultextension=".ini",files=["settings.ini","settings.conf","config
 		def __init__(self,**kwargs):
 			self.settings = get_settings(**kwargs)
 
-		def get(self,key):
-			return self.settings.get(key)
+		def get(self,*keys):
+			result = (self.settings.get(k) for k in keys)
+			if len(result) == 1: result = result[0]
+			return result
 
 
 
@@ -36,6 +38,7 @@ def config(defaultextension=".ini",files=["settings.ini","settings.conf","config
 
 		if text.lower() in ["true","yes"]: return True
 		if text.lower() in ["false","no"]: return False
+		if text.lower() in ["none","nan","n/a",""]: return None
 		if text.startswith("'") and text.endswith("'"): return text[1:-1]
 		if text.startswith('"') and text.endswith('"'): return text[1:-1]
 		try:
@@ -113,7 +116,8 @@ def config(defaultextension=".ini",files=["settings.ini","settings.conf","config
 
 		# specific keys requested
 		else:
-			return [allsettings[k] for k in keys]
+			if len(keys) == 1: return allsettings[keys[0]]
+			else: return [allsettings[k] for k in keys]
 
 
 	def set_settings(file,settings):
