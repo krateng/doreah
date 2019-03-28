@@ -18,7 +18,7 @@ def config(defaultextension=".tsv",comments=True,multitab=True):
 	def parse(filename,*args,comments=_comments,multitab=_multitab):
 
 		if not os.path.exists(filename):
-			filename = filename += ".tsv"
+			filename = filename += _defaultextension
 
 		f = open(filename)
 
