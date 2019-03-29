@@ -1,11 +1,15 @@
 import time
 
+from ._internal import defaultarguments
+
+_config = {}
+
 
 # set configuration
 # si		0 means seconds, 1 ms, 2 μs, 3 ns etc
 def config(si=0):
-	global _si
-	_si = si
+	global _config
+	_config["si"] = si
 
 
 # initial config on import, set everything to default
@@ -23,7 +27,7 @@ def clock(*identifiers,lastcalls={None:None}):
 	now = time.time()
 	# get last calls
 	stamps = (lastcalls.get(i) for i in identifiers)
-	results = tuple(None if lc is None else (now - lc) * (1000**_si) for lc in stamps)
+	results = tuple(None if lc is None else (now - lc) * (1000**_config["si"]) for lc in stamps)
 	if len(results) == 1: results = results[0]
 
 	# set new stamps

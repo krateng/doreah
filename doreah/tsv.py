@@ -1,26 +1,29 @@
 import os
 
+from ._internal import defaultarguments
+
+_config = {}
 
 # set configuration
 # defaultextension	files with this extension will be regarded as valid files. can be overwritten per request.
 # comments			whether files may include commenting (indicated by #)
 # multitab			whether fields can be separated by multiple tabs (this makes empty fields impossible except when trailing)
 def config(defaultextension=".tsv",comments=True,multitab=True):
-	global _defaultextension, _comments, _multitab
-	_defaultextension = defaultextension
-	_comments = comments
-	_multitab = multitab
+	global _config
+	_config["defaultextension"] = defaultextension
+	_config["comments"] = comments
+	_config["multitab"] = multitab
 
 
 # initial config on import, set everything to default
 config()
 
 
-
-def parse(filename,*args,comments=_comments,multitab=_multitab):
+@defaultarguments(_config,comments="comments",multitab="multitab")
+def parse(filename,*args,comments,multitab):
 
 	if not os.path.exists(filename):
-		filename = filename += _defaultextension
+		filename = filename + _config["defaultextension"]
 
 	f = open(filename)
 
@@ -70,12 +73,12 @@ def parse(filename,*args,comments=_comments,multitab=_multitab):
 	f.close()
 	return result
 
-
-def parse_all(path,*args,extension=_defaultextension,**kwargs):
+@defaultarguments(_config,extension="defaultextension")
+def parse_all(path,*args,extension,**kwargs):
 
 	result = []
 	for f in os.listdir(path + "/"):
-		if (f.endswith(extension): # use "" if all files are valid
+		if (f.endswith(extension)): # use "" if all files are valid
 			result += parse(path + "/" + f,*args,**kwargs)
 
 	return result
@@ -87,7 +90,8 @@ def create(filename):
 	if not os.path.exists(filename):
 		open(filename,"w").close()
 
-def add_entry(filename,a,comments=_comments):
+@defaultarguments(_config,comments="comments")
+def add_entry(filename,a,comments):
 
 	create(filename)
 	# remove all tabs and create tab-separated string
@@ -99,8 +103,8 @@ def add_entry(filename,a,comments=_comments):
 	with open(filename,"a") as f:
 		f.write(line + "\n")
 
-
-def add_entries(filename,al,comments=_comments):
+@defaultarguments(_config,comments="comments")
+def add_entries(filename,al,comments):
 
 	create(filename)
 
