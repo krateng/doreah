@@ -1,6 +1,11 @@
 import os
 import shutil
 
+from ._internal import defaultarguments
+
+
+_config = {}
+
 # set configuration
 # defaultextension	unused
 # files				list of all files that will be used for configuration. high indicies overwrite low indicies
@@ -9,33 +14,22 @@ import shutil
 # onlytext			interpret everything as a string. if False, strings can be put into quotes to avoid confusion
 def config(defaultextension=".ini",files=["settings.ini","settings.conf","configuration.ini","configuration.conf"],
 			comment=["#","//"],category=("[","]"),onlytext=False):
-	global _defaultextension, _files, _comment, _category, _onlytext
-	_defaultextension = defaultextension
-	_files = files
-	_comment = comment
-	_category = category
-	_onlytext = onlytext
 
+	global _config
+	_config["defaultextension"] = defaultextension
+	_config["files"] = files
+	_config["comment"] = comment
+	_config["category"] = category
+	_config["onlytext"] = onlytext
 
 # initial config on import, set everything to default
 config()
 
 
-# manager object so we can read settings once and retain them
-class Settings:
-	def __init__(self,**kwargs):
-		self.settings = get_settings(**kwargs)
-
-	def get(self,*keys):
-		result = (self.settings.get(k) for k in keys)
-		if len(result) == 1: result = result[0]
-		return result
-
-
 
 
 def _interpret(text):
-	if _onlytext: return text
+	if _config["onlytext"]: return text
 
 	if text.lower() in ["true","yes"]: return True
 	if text.lower() in ["false","no"]: return False
@@ -60,7 +54,8 @@ def _interpret(text):
 # cut_prefix	return keys without the prefix
 # category		return only keys of specific category
 # raw			do not interpret data type, only return strings
-def get_settings(*keys,files=_files,prefix="",cut_prefix=False,category=None,raw=False):
+@defaultarguments(_config,files="files")
+def get_settings(*keys,files,prefix="",cut_prefix=False,category=None,raw=False):
 
 	allsettings = {}
 
@@ -77,19 +72,19 @@ def get_settings(*keys,files=_files,prefix="",cut_prefix=False,category=None,raw
 		for l in lines:
 			# clean up line
 			l = l.replace("\n","")
-			for symbol in _comment:
+			for symbol in _config["comment"]:
 				l = l.split(symbol)[0]
 			l = l.strip()
 
 			# check if valid settings entry
 			if l == "": continue
-			if l.startswith(_category[0]):
+			if l.startswith(_config["category"][0]):
 				# ignore category headers if we don't care
 				if category is None: continue
 				# otherwise, find out if this is the category we want
 				else:
-					if l.endswith(_category[1]):
-						cat = l[len(_category[0]):-len(_category[1])]
+					if l.endswith(_config["category"][1]):
+						cat = l[len(_config["category"][0]):-len(_config["category"][1])]
 						ignore = not (cat == category) #if this is the right heading, set ignore to false
 					continue
 
@@ -134,7 +129,7 @@ def update_settings(file,settings,create_new=False):
 		l = origline
 		# clean up line
 		l = l.replace("\n","")
-		for symbol in _comment:
+		for symbol in _config["comment"]:
 			l = l.split(symbol)[0]
 		l = l.strip()
 
@@ -142,7 +137,7 @@ def update_settings(file,settings,create_new=False):
 		if l == "":
 			newlines.append(origline)
 			continue
-		if l.startswith(_category[0]):
+		if l.startswith(_config["category"][0]):
 			newlines.append(origline)
 			continue
 		if "=" not in l:
