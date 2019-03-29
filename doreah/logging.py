@@ -2,25 +2,24 @@ import datetime
 import inspect
 import os
 
+from ._internal import defaultarguments, gopen
+
+_config = {}
 
 _queue = []
+_locked = False
 
 # set configuration
 # logfolder			folder to store logfiles in
 # timeformat		strftime format for log files
 # defaultmodule		name for the main running script
 # verbosity			higher means more (less important) messages are shown on console
-# wait				if True, do not immediately log entries, but wait for a flush() command
-def config(logfolder="logs",timeformat="%Y/%m/%d %H:%M:%S",defaultmodule="main",verbosity=0,wait=False):
-	global _logfolder, _timeformat, _defaultmodule, _verbosity, _wait
-	_logfolder = logfolder
-	_timeformat = timeformat
-	_defaultmodule = defaultmodule
-	_verbosity = verbosity
-	_wait = wait
-
-	# things to do on reconfiguration
-	if not wait: flush()
+def config(logfolder="logs",timeformat="%Y/%m/%d %H:%M:%S",defaultmodule="main",verbosity=0):
+	global _config
+	_config["logfolder"] = logfolder
+	_config["timeformat"] = timeformat
+	_config["defaultmodule"] = defaultmodule
+	_config["verbosity"] = verbosity
 
 
 # initial config on import, set everything to default
@@ -38,7 +37,7 @@ config()
 # importance	low means important. if higher than the configured verbosity, entry will not be shown on console
 def log(*msgs,module=None,header=None,indent=0,importance=0):
 
-	now = datetime.datetime.utcnow().strftime(_timeformat)
+	now = datetime.datetime.utcnow().strftime(_config["timeformat"])
 
 	# log() can be used to add empty line
 	if len(msgs) == 0: msgs = ("",)
@@ -59,24 +58,24 @@ def log(*msgs,module=None,header=None,indent=0,importance=0):
 	if module is None:
 		try:
 			module = inspect.getmodule(inspect.stack()[1][0]).__name__
-			if module == "__main__": module = _defaultmodule
+			if module == "__main__": module = _config["defaultmodule"]
 		except:
 			module = "interpreter"
 
-	global _wait, _queue
-	if _wait:
+	global _locked, _queue
+	if _locked:
 		for msg in msgs:
-			_queue.append({"time":now,"prefix":prefix,"msg":msg,"module":module,"console":(importance <= _verbosity)})
+			_queue.append({"time":now,"prefix":prefix,"msg":msg,"module":module,"console":(importance <= _config["verbosity"])})
 	else:
 		# console output
-		if (importance <= _verbosity):
+		if (importance <= _config["verbosity"]):
 			for msg in msgs:
 				print("[" + module + "] " + prefix + msg)
 
 		# file output
-		logfilename = _logfolder + "/" + module + ".log"
-		os.makedirs(os.path.dirname(logfilename), exist_ok=True)
-		with open(logfilename,"a") as logfile:
+		logfilename = _config["logfolder"] + "/" + module + ".log"
+		#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
+		with gopen(logfilename,"a") as logfile:
 			for msg in msgs:
 				logfile.write(now + "  " + prefix + msg + "\n")
 
@@ -89,9 +88,9 @@ def flush():
 			print("[" + entry["module"] + "] " + entry["prefix"] + entry["msg"])
 
 		# file output
-		logfilename = _logfolder + "/" + entry["module"] + ".log"
-		os.makedirs(os.path.dirname(logfilename), exist_ok=True)
-		with open(logfilename,"a") as logfile:
+		logfilename = _config["logfolder"] + "/" + entry["module"] + ".log"
+		#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
+		with gopen(logfilename,"a") as logfile:
 			logfile.write(entry["time"] + "  " + entry["prefix"] + entry["msg"] + "\n")
 
 	_queue = []

@@ -24,7 +24,6 @@ def defaultarguments(defaultdict,**defaultargs):
 ## opens file, creates it if necessary (including all folders)
 def gopen(filepath,mode):
 	directory = os.path.dirname(filepath)
-	if not os.path.exists(directory):
-		os.makedirs(directory)
+	os.makedirs(directory, exist_ok=True)
 
 	return open(filepath,mode)
