@@ -1,3 +1,5 @@
+name = "doreah"
+
 __all__ = [
 	"caching",
 	"logging",

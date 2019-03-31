@@ -1,6 +1,8 @@
 /*
-!README
-!LICENSE
+!README*
+!LICENSE*
+!setup.py
+!/dist/*
 !.gitignore
 !/doreah/
 *.pyc
