@@ -6,11 +6,7 @@
 Overview
 ==================================
 
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
 
-   api/index
 
 
 Doreah is a useful little toolkit that offers shortcuts and abstractions for common operations.
