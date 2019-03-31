@@ -18,6 +18,7 @@ config()
 
 @defaultarguments(_config,folder="folder")
 def save(data,name,folder):
+	"""Saves the supplied data structure to disk"""
 
 	filename = os.path.join(folder,name + ".gilly")
 
@@ -28,6 +29,7 @@ def save(data,name,folder):
 
 @defaultarguments(_config,folder="folder")
 def load(name,folder):
+	"""Loads a data structure from disk"""
 
 	filename = os.path.join(folder,name + ".gilly")
 

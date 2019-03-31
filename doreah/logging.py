@@ -37,6 +37,7 @@ config()
 # indent		adds indent to the log entry
 # importance	low means important. if higher than the configured verbosity, entry will not be shown on console
 def log(*msgs,module=None,header=None,indent=0,importance=0):
+	"""Logs all supplied arguments, separate line for each. Only writes to logfile if importance value is lower than the set verbosity value."""
 
 	now = datetime.datetime.utcnow().strftime(_config["timeformat"])
 
@@ -82,6 +83,7 @@ def log(*msgs,module=None,header=None,indent=0,importance=0):
 
 
 def flush():
+	"""Outputs and empties the complete backlog."""
 	global _queue
 	for entry in _queue:
 		# console output
@@ -98,8 +100,10 @@ def flush():
 
 # Quicker way to add header
 def logh1(*args,**kwargs):
+	"""Logs a top-level header"""
 	return log(*args,**kwargs,header=1)
 def logh2(*args,**kwargs):
+	"""Logs a second-level header"""
 	return log(*args,**kwargs,header=2)
 
 

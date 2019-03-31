@@ -21,6 +21,7 @@ config()
 
 
 class Cache:
+	"""Dictionary-like object to store key-value pairs up to a certain amount and discard them after they expire."""
 
 	@defaultarguments(_config,maxsize="maxsize",maxage="maxage",maxage_negative="maxage_negative")
 	def __init__(self,maxsize,maxage,maxage_negative):
@@ -49,6 +50,7 @@ class Cache:
 
 
 	def get(self,key,allow_expired=False):
+		"""Get the value of a key in the cache"""
 
 		if key not in self.cache: raise KeyError()
 
@@ -67,6 +69,7 @@ class Cache:
 		raise KeyError()
 
 	def add(self,key,value):
+		"""Add an entry to the cache"""
 
 #		if len(self.cache) < self.maxsize: #still have space
 #			pass
@@ -94,6 +97,7 @@ class Cache:
 			del self.times[delkey]
 
 	def flush(self):
+		"""Flush all expired entries from the cache"""
 
 		now_stamp = int(datetime.datetime.utcnow().timestamp())
 
@@ -112,6 +116,7 @@ class Cache:
 # decorator
 @defaultarguments(_config,maxsize="maxsize",maxage="maxage",maxage_negative="maxage_negative",lazy_refresh="lazy_refresh")
 def cached(maxsize,maxage,maxage_negative,lazy_refresh):
+	"""Method decorator to add a proxy cache to a function without keyword arguments."""
 
 	# decorator for lazy refresh
 	if lazy_refresh:

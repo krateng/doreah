@@ -87,6 +87,7 @@ def _interpret(text):
 # raw			do not interpret data type, only return strings
 @defaultarguments(_config,files="files")
 def get_settings(*keys,files,prefix="",cut_prefix=False,category=None,raw=False):
+	"""Get the active settings value for all supplied keys. Get a dict of all settings (or only filtered) if no keys are supplied."""
 
 	allsettings = {}
 
@@ -148,6 +149,7 @@ def get_settings(*keys,files,prefix="",cut_prefix=False,category=None,raw=False)
 
 
 def update_settings(file,settings,create_new=False):
+	"""Updates all settings in a file with settings from the supplied dictionary."""
 
 	if not os.path.exists(file): open(file,"w").close()
 
@@ -206,8 +208,9 @@ def update_settings(file,settings,create_new=False):
 
 
 
-# updates a user settings file to a newer format from a default file without overwriting user's settings
+
 def update(source="default_settings.ini",target="settings.ini"):
+	"""Updates a user settings file to a newer format from a default file without overwriting user's settings"""
 
 	if not os.path.exists(target):
 		shutil.copyfile(source,target)

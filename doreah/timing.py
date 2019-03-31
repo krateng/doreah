@@ -21,6 +21,8 @@ config()
 # identifiers	arbitrary strings to remember different timers. guaranteed to set all timers to exactly the same time for
 #				all identifiers in one call. will return tuple of all identifiers, singular value if only one identifier
 def clock(*identifiers,lastcalls={None:None}):
+	"""Takes the time. Returns elapsed time since last call with that identifier for each identifier,
+	or time since last call with any identifier if no identifier is given."""
 
 	if len(identifiers) == 0: identifiers = (None,)
 
@@ -40,6 +42,7 @@ def clock(*identifiers,lastcalls={None:None}):
 
 
 def clockp(name,*identifiers):
+	"""Prints out elapsed time since last call according to the rules of :meth:`clock`"""
 	time = clock(*identifiers)
 	print(name + ": " + str(time))
 

@@ -1,0 +1,9 @@
+{# layout.html #}
+{# Import the theme's layout. #}
+{% extends "!layout.html" %}
+
+{% set css_files = css_files + ['_static/css/kratengchanges.css'] %}
+{% block menu %}
+	{{ super() }}
+	<a href="genindex.html">Index</a>
+{% endblock %}

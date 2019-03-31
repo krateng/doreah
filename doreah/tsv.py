@@ -21,6 +21,7 @@ config()
 
 @defaultarguments(_config,comments="comments",multitab="multitab")
 def parse(filename,*args,comments,multitab):
+	"""Parses a tsv-like file."""
 
 	if not os.path.exists(filename):
 		filename = filename + _config["defaultextension"]
@@ -75,6 +76,7 @@ def parse(filename,*args,comments,multitab):
 
 @defaultarguments(_config,extension="defaultextension")
 def parse_all(path,*args,extension,**kwargs):
+	"""Parses all valid files in a specific directory"""
 
 	result = []
 	for f in os.listdir(path + "/"):
@@ -86,12 +88,14 @@ def parse_all(path,*args,extension,**kwargs):
 
 
 def create(filename):
+	"""Creates a file if it doesn't already exist"""
 
 	if not os.path.exists(filename):
 		open(filename,"w").close()
 
 @defaultarguments(_config,comments="comments")
 def add_entry(filename,a,comments):
+	"""Adds an entry to a tsv-like file"""
 
 	create(filename)
 	# remove all tabs and create tab-separated string
@@ -105,6 +109,7 @@ def add_entry(filename,a,comments):
 
 @defaultarguments(_config,comments="comments")
 def add_entries(filename,al,comments):
+	"""Adds several entries to a tsv-like file"""
 
 	create(filename)
 

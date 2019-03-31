@@ -1,9 +1,10 @@
 import os
-
+from functools import wraps
 
 ## decorator to set default arguments that are only evaluated at runtime
 def defaultarguments(defaultdict,**defaultargs):
 	def decorator(func):	#actual decorator function
+		@wraps(func)
 		def newfunc(*args,**kwargs):
 			realargs = {}
 
