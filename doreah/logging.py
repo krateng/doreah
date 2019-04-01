@@ -51,9 +51,9 @@ def log(*entries,module=None,heading=None,indent=0,importance=0):
 	entries = tuple([str(msg) for msg in entries])
 
 	# header formating
-	if header == 2:
+	if heading == 2:
 		entries = ("","","####") + entries + ("####","")
-	elif header == 1:
+	elif heading == 1:
 		entries = ("","","","# # # # #","") + entries + ("","# # # # #","","")
 
 	# indent
