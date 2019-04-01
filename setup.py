@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="doreah",
-    version="0.1",
+    version="0.2",
     author="Johannes Krattenmacher",
     author_email="python@krateng.dev",
     description="Small toolkit of utilities for python projects",

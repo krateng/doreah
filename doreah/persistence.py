@@ -29,10 +29,12 @@ def save(data,name,folder=DEFAULT):
 
 	filename = os.path.join(folder,name + ".gilly")
 
-	fl = gopen(filename,"wb")
-	stream = pickle.dumps(data)
-	fl.write(stream)
-	fl.close()
+	try:
+		with gopen(filename,"wb") as fl:
+			stream = pickle.dumps(data)
+			fl.write(stream)
+	except:
+		pass
 
 @defaultarguments(_config,folder="folder")
 def load(name,folder=DEFAULT):
@@ -45,11 +47,9 @@ def load(name,folder=DEFAULT):
 	filename = os.path.join(folder,name + ".gilly")
 
 	try:
-		fl = gopen(filename,"rb")
-		ob = pickle.loads(fl.read())
+		with gopen(filename,"rb") as fl:
+			ob = pickle.loads(fl.read())
 	except: ob = None
-	finally:
-		fl.close()
 
 	return ob
 
