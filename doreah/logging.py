@@ -15,6 +15,9 @@ _locked = False
 # defaultmodule		name for the main running script
 # verbosity			higher means more (less important) messages are shown on console
 def config(logfolder="logs",timeformat="%Y/%m/%d %H:%M:%S",defaultmodule="main",verbosity=0):
+	"""Configures default values for this module.
+
+	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
 	global _config
 	_config["logfolder"] = logfolder
 	_config["timeformat"] = timeformat

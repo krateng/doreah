@@ -1,6 +1,12 @@
 import os
 from functools import wraps
 
+# This is purely for documentation
+class Default:
+	def __repr__(self):
+		return u"<Module default>"
+DEFAULT = Default()
+
 ## decorator to set default arguments that are only evaluated at runtime
 def defaultarguments(defaultdict,**defaultargs):
 	def decorator(func):	#actual decorator function
@@ -37,3 +43,7 @@ def doreahconfig(module):
 	from .settings import get_settings
 	s = get_settings(files=[".doreah"],prefix=module + ".",cut_prefix=True)
 	return s
+
+
+
+### change decorator, use default object instead (sentinel) for better documentation

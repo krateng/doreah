@@ -2,14 +2,16 @@ import math
 import datetime
 from threading import Thread
 
-from ._internal import defaultarguments, doreahconfig
+from ._internal import DEFAULT, defaultarguments, doreahconfig
 
 _config = {}
 
 _caches = {}
 
 def config(maxsize=math.inf,maxage=60*60*24*1,maxage_negative=60*60*24*1,lazy_refresh=True):
+	"""Configures default values for this module.
 
+	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
 	global _config
 	_config["maxsize"] = maxsize
 	_config["maxage"] = maxage
@@ -21,10 +23,14 @@ config()
 
 
 class Cache:
-	"""Dictionary-like object to store key-value pairs up to a certain amount and discard them after they expire."""
+	"""Dictionary-like object to store key-value pairs up to a certain amount and discard them after they expire.
+
+	:param integer maxsize: Amount of entries the cache should hold before discarding old entries.
+	:param integer maxage: Time in seconds entries are valid for after their last update. Entries older than this value are lazily removed, which means they might still be accessible with the ``allow_expired`` argument of the :meth:get method.
+	:param integer maxage_negative: Time in seconds entries with the ``None`` value are valid. This is useful for negative caching."""
 
 	@defaultarguments(_config,maxsize="maxsize",maxage="maxage",maxage_negative="maxage_negative")
-	def __init__(self,maxsize,maxage,maxage_negative):
+	def __init__(self,maxsize=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT):
 		self.maxsize = maxsize
 		self.maxage = maxage
 		self.maxage_negative = maxage_negative
@@ -50,7 +56,12 @@ class Cache:
 
 
 	def get(self,key,allow_expired=False):
-		"""Get the value of a key in the cache"""
+		"""Get the value of a key in the cache.
+
+		:param key: Key to be retrieved.
+		:param boolean allow_expired: If set to True, entries that have already expired will still be returned.
+		:return: Value of the requested key in the cache.
+		:raises KeyError: No valid entry for the key found."""
 
 		if key not in self.cache: raise KeyError()
 
@@ -69,7 +80,10 @@ class Cache:
 		raise KeyError()
 
 	def add(self,key,value):
-		"""Add an entry to the cache"""
+		"""Add an entry to the cache.
+
+		:param key: Key to be added.
+		:param value: Value of this entry."""
 
 #		if len(self.cache) < self.maxsize: #still have space
 #			pass
@@ -97,7 +111,7 @@ class Cache:
 			del self.times[delkey]
 
 	def flush(self):
-		"""Flush all expired entries from the cache"""
+		"""Flush all expired entries from the cache. This is normally done lazily when needed, so this function does not need to be called manually."""
 
 		now_stamp = int(datetime.datetime.utcnow().timestamp())
 
@@ -115,8 +129,14 @@ class Cache:
 
 # decorator
 @defaultarguments(_config,maxsize="maxsize",maxage="maxage",maxage_negative="maxage_negative",lazy_refresh="lazy_refresh")
-def cached(maxsize,maxage,maxage_negative,lazy_refresh):
-	"""Method decorator to add a proxy cache to a function without keyword arguments."""
+def cached(maxsize=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT,lazy_refresh=DEFAULT):
+	"""Method decorator to add a proxy cache to a function without keyword arguments.
+
+	:param integer maxsize: Amount of entries the cache should hold before discarding old entries.
+	:param integer maxage: Time in seconds entries are valid for after their last update. Entries older than this value are lazily removed, which means they might still be accessible with the ``allow_expired`` argument of the :meth:`get` method.
+	:param integer maxage_negative: Time in seconds entries with the ``None`` value are valid. This is useful for negative caching.
+	:param boolean lazy_refresh: If True, expired cache entries will still be returned, but trigger a background refresh. Useful if speed is more important than currentness of data."""
+
 
 	# decorator for lazy refresh
 	if lazy_refresh:

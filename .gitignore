@@ -2,7 +2,6 @@
 !README*
 !LICENSE*
 !setup.py
-!/dist/*
 !.gitignore
 !/doreah/
 !/docs/

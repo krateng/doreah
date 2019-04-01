@@ -14,7 +14,9 @@ _config = {}
 # onlytext			interpret everything as a string. if False, strings can be put into quotes to avoid confusion
 def config(defaultextension=".ini",files=["settings.ini","settings.conf","configuration.ini","configuration.conf"],
 			comment=["#","//"],category=("[","]"),onlytext=False):
+	"""Configures default values for this module.
 
+	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
 	global _config
 	_config["defaultextension"] = defaultextension
 	_config["files"] = files
