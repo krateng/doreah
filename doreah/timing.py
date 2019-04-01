@@ -28,8 +28,7 @@ def clock(*identifiers):
 	"""Takes the time. Returns elapsed time since last call with that identifier for each identifier,
 	or time since last call with any identifier if no identifier is given.
 
-	:param string identifiers: Unique identifiers for timing to be taken.
-
+	:param string identifiers: Unique identifiers for timing to be taken
 	:return: Tuple of elapsed times for each identifier, or single value if only one identifier or no identifier."""
 
 	global _lastcalls
@@ -54,8 +53,8 @@ def clock(*identifiers):
 def clockp(name,*identifiers):
 	"""Prints out elapsed time since last call according to the rules of :meth:`clock`
 
-	:param string name: Name to be printed out.
-	:param string identifiers: Unique identifiers for timing to be taken."""
+	:param string name: Name to be printed out
+	:param string identifiers: Unique identifiers for timing to be taken"""
 	time = clock(*identifiers)
 	print(name + ": " + str(time))
 

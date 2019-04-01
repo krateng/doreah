@@ -1,6 +1,6 @@
 import os
 
-from ._internal import defaultarguments, doreahconfig
+from ._internal import DEFAULT, defaultarguments, doreahconfig
 
 _config = {}
 
@@ -23,8 +23,14 @@ config()
 
 
 @defaultarguments(_config,comments="comments",multitab="multitab")
-def parse(filename,*args,comments,multitab):
-	"""Parses a tsv-like file."""
+def parse(filename,*args,comments=DEFAULT,multitab=DEFAULT):
+	"""Parses a tsv-like file.
+
+	:param string filename: File to be parsed
+	:param string args: Data types to be read
+	:param boolean comments: Whether the file may contain comments
+	:param boolean multitab: Whether values can be separated by an arbitrary amount of tabs
+	:return: List of entries, one entry per line, each entry a list of fields"""
 
 	if not os.path.exists(filename):
 		filename = filename + _config["defaultextension"]
@@ -78,8 +84,13 @@ def parse(filename,*args,comments,multitab):
 	return result
 
 @defaultarguments(_config,extension="defaultextension")
-def parse_all(path,*args,extension,**kwargs):
-	"""Parses all valid files in a specific directory"""
+def parse_all(path,*args,extension=DEFAULT,**kwargs):
+	"""Parses all valid files in a specific directory
+
+	:param string path: Directory to search for files
+	:param string args: Data types to be read
+	:param string extension: Only parse files ending with this string
+	:param kwargs: Parse settings to be applied, see :func:`parse`"""
 
 	result = []
 	for f in os.listdir(path + "/"):
@@ -91,18 +102,24 @@ def parse_all(path,*args,extension,**kwargs):
 
 
 def create(filename):
-	"""Creates a file if it doesn't already exist"""
+	"""Creates a file if it doesn't already exist
+
+	:param string filename: Full filename"""
 
 	if not os.path.exists(filename):
 		open(filename,"w").close()
 
 @defaultarguments(_config,comments="comments")
-def add_entry(filename,a,comments):
-	"""Adds an entry to a tsv-like file"""
+def add_entry(filename,entry,comments=DEFAULT):
+	"""Adds an entry to a tsv-like file
+
+	:param string filename: Full filename
+	:param iterable entry: List or tuple of fields
+	:param boolean comments: Whether the file can contain comments"""
 
 	create(filename)
 	# remove all tabs and create tab-separated string
-	line = "\t".join([str(e).replace("\t"," ") for e in a])
+	line = "\t".join([str(field).replace("\t"," ") for field in entry])
 
 	# replace comment symbol
 	if comments: line = line.replace("#",r"\num")
@@ -111,14 +128,18 @@ def add_entry(filename,a,comments):
 		f.write(line + "\n")
 
 @defaultarguments(_config,comments="comments")
-def add_entries(filename,al,comments):
-	"""Adds several entries to a tsv-like file"""
+def add_entries(filename,entries,comments=DEFAULT):
+	"""Adds several entries to a tsv-like file
+
+	:param string filename: Full filename
+	:param iterable entries: List or tuple of entries, each a list of tuple of fields
+	:param boolean comments: Whether the file can contain comments"""
 
 	create(filename)
 
 	with open(filename,"a") as f:
-		for a in al:
-			line = "\t".join([str(e).replace("\t"," ") for e in a])
+		for entry in entries:
+			line = "\t".join([str(field).replace("\t"," ") for field in entry])
 			if comments: line = line.replace("#",r"\num")
 			f.write(line + "\n")
 

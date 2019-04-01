@@ -26,7 +26,7 @@ class Cache:
 	"""Dictionary-like object to store key-value pairs up to a certain amount and discard them after they expire.
 
 	:param integer maxsize: Amount of entries the cache should hold before discarding old entries.
-	:param integer maxage: Time in seconds entries are valid for after their last update. Entries older than this value are lazily removed, which means they might still be accessible with the ``allow_expired`` argument of the :meth:get method.
+	:param integer maxage: Time in seconds entries are valid for after their last update. Entries older than this value are lazily removed, which means they might still be accessible with the ``allow_expired`` argument of the :meth:`get` method.
 	:param integer maxage_negative: Time in seconds entries with the ``None`` value are valid. This is useful for negative caching."""
 
 	@defaultarguments(_config,maxsize="maxsize",maxage="maxage",maxage_negative="maxage_negative")

@@ -1,7 +1,7 @@
 import os
 import shutil
 
-from ._internal import defaultarguments, doreahconfig
+from ._internal import DEFAULT, defaultarguments, doreahconfig
 
 
 _config = {}
@@ -88,8 +88,16 @@ def _interpret(text):
 # category		return only keys of specific category
 # raw			do not interpret data type, only return strings
 @defaultarguments(_config,files="files")
-def get_settings(*keys,files,prefix="",cut_prefix=False,category=None,raw=False):
-	"""Get the active settings value for all supplied keys. Get a dict of all settings (or only filtered) if no keys are supplied."""
+def get_settings(*keys,files=DEFAULT,prefix="",cut_prefix=False,category=None,raw=False):
+	"""Get the active settings value for all supplied keys. Get a dict of all settings (or only filtered) if no keys are supplied.
+
+	:param string keys: Setting keys to be read
+	:param list files: List of settings files from least to most authorative
+	:param string prefix: Only return settings keys beginning with this string
+	:param boolean cut_prefix: Drop specified prefix from key names
+	:param string category: Only return settings of this category
+	:param boolean raw: Do not parse data types, return all values as strings
+	:return: Tuple of values for all specified keys. If no keys are specified, dict of all settings that satisfy the constraints."""
 
 	allsettings = {}
 
@@ -151,7 +159,11 @@ def get_settings(*keys,files,prefix="",cut_prefix=False,category=None,raw=False)
 
 
 def update_settings(file,settings,create_new=False):
-	"""Updates all settings in a file with settings from the supplied dictionary."""
+	"""Updates all settings in a file with settings from the supplied dictionary.
+
+	:param string file: Settings file to write to
+	:param dictionary settings: Settings data to write
+	:param boolean create_new: Whether to write settings that are not already present in the file"""
 
 	if not os.path.exists(file): open(file,"w").close()
 
@@ -212,7 +224,10 @@ def update_settings(file,settings,create_new=False):
 
 
 def update(source="default_settings.ini",target="settings.ini"):
-	"""Updates a user settings file to a newer format from a default file without overwriting user's settings"""
+	"""Updates a user settings file to a newer format from a default file without overwriting user's settings.
+
+	:param string source: Default settings file that provides the format
+	:param string target: Local settings file that provides higher authority on settings values"""
 
 	if not os.path.exists(target):
 		shutil.copyfile(source,target)

@@ -33,28 +33,28 @@ config()
 
 
 
-# Log entry
-# module		allows discrimination between modules of a program. Will be prepended in console output and will determine the separate file for disk storage
-# 				defaults to actual name of the calling module or "main" for the main script
-# header		determines the hierarchical position of the entry.
-# indent		adds indent to the log entry
-# importance	low means important. if higher than the configured verbosity, entry will not be shown on console
-def log(*msgs,module=None,header=None,indent=0,importance=0):
-	"""Logs all supplied arguments, separate line for each. Only writes to logfile if importance value is lower than the set verbosity value."""
+def log(*entries,module=None,heading=None,indent=0,importance=0):
+	"""Logs all supplied arguments, separate line for each. Only writes to logfile if importance value is lower than the set verbosity value.
+
+	:param string entries: All log entries, one line per entry
+	:param string module: Custom category. Log entry will be prepended by this string in the console and be written to this file on disk. Defaults to actual name of the python module.
+	:param integer heading: Heading category. Headings will be visually distinguished from normal entries.
+	:param integer indent: Indent to be added to entry
+	:param integer importance: Low means important. If this value is higher than the verbosity, entry will not be shown on console."""
 
 	now = datetime.datetime.utcnow().strftime(_config["timeformat"])
 
 	# log() can be used to add empty line
-	if len(msgs) == 0: msgs = ("",)
+	if len(entries) == 0: entries = ("",)
 
 	# make it easier to log data structures and such
-	msgs = tuple([str(msg) for msg in msgs])
+	entries = tuple([str(msg) for msg in entries])
 
 	# header formating
 	if header == 2:
-		msgs = ("","","####") + msgs + ("####","")
+		entries = ("","","####") + entries + ("####","")
 	elif header == 1:
-		msgs = ("","","","# # # # #","") + msgs + ("","# # # # #","","")
+		entries = ("","","","# # # # #","") + entries + ("","# # # # #","","")
 
 	# indent
 	prefix = "\t" * indent
@@ -69,19 +69,19 @@ def log(*msgs,module=None,header=None,indent=0,importance=0):
 
 	global _locked, _queue
 	if _locked:
-		for msg in msgs:
+		for msg in entries:
 			_queue.append({"time":now,"prefix":prefix,"msg":msg,"module":module,"console":(importance <= _config["verbosity"])})
 	else:
 		# console output
 		if (importance <= _config["verbosity"]):
-			for msg in msgs:
+			for msg in entries:
 				print("[" + module + "] " + prefix + msg)
 
 		# file output
 		logfilename = _config["logfolder"] + "/" + module + ".log"
 		#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
 		with gopen(logfilename,"a") as logfile:
-			for msg in msgs:
+			for msg in entries:
 				logfile.write(now + "  " + prefix + msg + "\n")
 
 
@@ -103,10 +103,10 @@ def flush():
 
 # Quicker way to add header
 def logh1(*args,**kwargs):
-	"""Logs a top-level header"""
+	"""Logs a top-level header. Otherwise, same arguments as :func:`log`"""
 	return log(*args,**kwargs,header=1)
 def logh2(*args,**kwargs):
-	"""Logs a second-level header"""
+	"""Logs a second-level header. Otherwise, same arguments as :func:`log`"""
 	return log(*args,**kwargs,header=2)
 
 

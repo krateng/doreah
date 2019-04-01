@@ -1,7 +1,7 @@
 import pickle
 import os
 
-from ._internal import defaultarguments, gopen, doreahconfig
+from ._internal import DEFAULT, defaultarguments, gopen, doreahconfig
 
 _config = {}
 
@@ -20,8 +20,12 @@ config()
 
 
 @defaultarguments(_config,folder="folder")
-def save(data,name,folder):
-	"""Saves the supplied data structure to disk"""
+def save(data,name,folder=DEFAULT):
+	"""Saves the supplied data structure to disk.
+
+	:param data: Object to be serialized and saved to disk
+	:param string name: File name to be used
+	:param string folder: Custom folder to save the file in"""
 
 	filename = os.path.join(folder,name + ".gilly")
 
@@ -31,8 +35,12 @@ def save(data,name,folder):
 	fl.close()
 
 @defaultarguments(_config,folder="folder")
-def load(name,folder):
-	"""Loads a data structure from disk"""
+def load(name,folder=DEFAULT):
+	"""Loads a data structure from disk.
+
+	:param string name: File name to be read
+	:param string folder: Custom folder where the file is stored
+	:return: Data object"""
 
 	filename = os.path.join(folder,name + ".gilly")
 
