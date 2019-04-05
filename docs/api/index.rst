@@ -5,6 +5,7 @@ Modules
    caching
    logging
    persistence
+   regular
    settings
    timing
    tsv
