@@ -132,3 +132,8 @@ def _often(func):
 			t.daemon = True
 			t.start()
 		return starter
+
+
+
+# now check local configuration file
+_config.update(doreahconfig("regular"))
