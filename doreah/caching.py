@@ -2,6 +2,8 @@ import math
 import datetime
 from threading import Thread
 import os
+import sys
+import pickle
 
 from ._internal import DEFAULT, defaultarguments, doreahconfig
 from .persistence import save, load
@@ -10,12 +12,13 @@ _config = {}
 
 _caches = {}
 
-def config(maxsize=math.inf,maxage=60*60*24*1,maxage_negative=60*60*24*1,lazy_refresh=True,folder="cache"):
+def config(maxsize=math.inf,maxmemory=math.inf,maxage=60*60*24*1,maxage_negative=60*60*24*1,lazy_refresh=True,folder="cache"):
 	"""Configures default values for this module.
 
 	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
 	global _config
 	_config["maxsize"] = maxsize
+	_config["maxmemory"] = maxmemory
 	_config["maxage"] = maxage
 	_config["maxage_negative"] = maxage_negative
 	_config["folder"] = folder
@@ -32,37 +35,42 @@ class Cache:
 	"""Dictionary-like object to store key-value pairs up to a certain amount and discard them after they expire.
 
 	:param integer maxsize: Amount of entries the cache should hold before discarding old entries
+	:param integer maxmemory: Soft memory limit for the cache (in bytes), not meant for precision
 	:param integer maxage: Time in seconds entries are valid for after their last update. Entries older than this value are lazily removed, which means they might still be accessible with the ``allow_expired`` argument of the :meth:`get` method.
 	:param integer maxage_negative: Time in seconds entries with the ``None`` value are valid. This is useful for negative caching.
 	:param boolean persistent: Whether this cache should be persistent through program restarts
 	:param string name: If persistent, this is the filename used"""
 
-	@defaultarguments(_config,maxsize="maxsize",maxage="maxage",maxage_negative="maxage_negative")
-	def __init__(self,maxsize=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT,persistent=False,name=None):
+	@defaultarguments(_config,maxsize="maxsize",maxmemory="maxmemory",maxage="maxage",maxage_negative="maxage_negative")
+	def __init__(self,maxsize=DEFAULT,maxmemory=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT,persistent=False,name=None):
 
 		self.maxsize = maxsize
+		self.maxmemory = maxmemory
 		self.maxage = maxage
 		self.maxage_negative = maxage_negative
 		self.persistent = persistent
 		if self.persistent:
 			self.name = name
-
-
+			obj = load(name,folder=_config["folder"])
+			if obj is not None:
+				self.cache,self.times = obj
+				return
+		# if either no object loaded, or not persistent in the first place
 		self.cache = {}
 		self.times = {}
 
-	def create(name="defaultcache",**kwargs):
-		"""Create a new Cache object, preinitializing it from disk if applicable
-
-		:param string name: Name of the object, consistent between sessions
-		:param kwargs: Standard arguments of :class:`Cache` object creation
-		:return: Newly created object"""
-
-		obj = load(name,folder=_config["folder"])
-		if obj is not None: return obj
-
-		obj = Cache(**kwargs,persistent=True,name=name)
-		return obj
+#	def create(name="defaultcache",**kwargs):
+#		"""Create a new Cache object, preinitializing it from disk if applicable
+#
+#		:param string name: Name of the object, consistent between sessions
+#		:param kwargs: Standard arguments of :class:`Cache` object creation
+#		:return: Newly created object"""
+#
+#		obj = load(name,folder=_config["folder"])
+#		if obj is not None: return obj
+#
+#		obj = Cache(**kwargs,persistent=True,name=name)
+#		return obj
 
 	def __contains__(self,key):
 		#if key not in self.cache: return False
@@ -125,10 +133,11 @@ class Cache:
 		self.times[key] = int(datetime.datetime.utcnow().timestamp())
 
 
-		if len(self.cache) > self.maxsize:
+		if len(self.cache) > self.maxsize or self._size() > self.maxmemory:
 			#flush anyway expired entries
 			self.flush()
-		if len(self.cache) > self.maxsize:
+
+		while len(self.cache) > self.maxsize or self._size() > self.maxmemory:
 			#expire oldest entry
 			keys = list(self.times.keys())
 			keys.sort(key=lambda k:self.times[k])
@@ -158,8 +167,11 @@ class Cache:
 
 	def _onupdate(self):
 		if self.persistent:
-			save(self,self.name,folder=_config["folder"])
+			#save(self,self.name,folder=_config["folder"])
+			save((self.cache,self.times),self.name,folder=_config["folder"])
 
+	def _size(self):
+		return sys.getsizeof(pickle.dumps(self.cache))
 
 
 # decorator
