@@ -6,20 +6,21 @@ import sys
 import pickle
 
 from ._internal import DEFAULT, defaultarguments, doreahconfig
-from .persistence import save, load
+from .persistence import save, load, delete
 from .regular import repeatdaily
 
 _config = {}
 
 _caches = {}
 
-def config(maxsize=math.inf,maxmemory=math.inf,maxage=60*60*24*1,maxage_negative=60*60*24*1,lazy_refresh=True,folder="cache"):
+def config(maxsize=math.inf,maxmemory=math.inf,maxstorage=16*1024*1024*1024,maxage=60*60*24*1,maxage_negative=60*60*24*1,lazy_refresh=True,folder="cache"):
 	"""Configures default values for this module.
 
 	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
 	global _config
 	_config["maxsize"] = maxsize
 	_config["maxmemory"] = maxmemory
+	_config["maxstorage"] = maxstorage
 	_config["maxage"] = maxage
 	_config["maxage_negative"] = maxage_negative
 	_config["folder"] = folder
@@ -52,12 +53,15 @@ class Cache:
 		self.persistent = persistent
 		if self.persistent:
 			self.name = name
-			obj = load(name,folder=_config["folder"])
-			if obj is not None:
-				self.cache,self.times = obj
-				self.changed = False
-				self._maintenance()
-				return
+			try:
+				obj = load(name,folder=_config["folder"])
+				if obj is not None:
+					self.cache,self.times = obj
+					self.changed = False
+					self._maintenance()
+					return
+			except:
+				pass
 		# if either no object loaded, or not persistent in the first place
 		self.cache = {}
 		self.times = {}
@@ -187,6 +191,162 @@ class Cache:
 	def _size(self):
 		return sys.getsizeof(pickle.dumps(self.cache))
 
+
+
+class _DiskReference:
+	def __init__(self,filename):
+		self.filename = filename
+
+class DeepCache(Cache):
+	"""Dictionary-like object to store key-value pairs with the help of hard disk storage up to a certain amount and discard them after they expire.
+
+	:param integer maxmemory: Soft memory limit for the cache (in bytes), not meant for precision
+	:param integer maxstorage: Soft disk space limit for the cache (in bytes), not meant for precision
+	:param integer maxage: Time in seconds entries are valid for after their last update. Entries older than this value are lazily removed, which means they might still be accessible with the ``allow_expired`` argument of the :meth:`get` method.
+	:param integer maxage_negative: Time in seconds entries with the ``None`` value are valid. This is useful for negative caching.
+	:param string name: Directory name used for storage"""
+
+	@defaultarguments(_config,maxmemory="maxmemory",maxstorage="maxstorage",maxage="maxage",maxage_negative="maxage_negative")
+	def __init__(self,maxmemory=DEFAULT,maxage=DEFAULT,maxstorage=DEFAULT,maxage_negative=DEFAULT,name="deepcache"):
+
+		self.maxmemory = maxmemory
+		self.maxstorage = maxstorage
+		self.maxage = maxage
+		self.maxage_negative = maxage_negative
+
+		self.name = name
+
+		try:
+			obj = load(self._file(),folder=_config["folder"])
+			self.cache,self.times = obj
+			self.changed = False
+		except:
+			self.cache = {}
+			self.times = {}
+		# if either no object loaded, or not persistent in the first place
+
+		self.changed = False
+		self.counter = 0
+		self._maintenance()
+
+	def get(self,key,allow_expired=False):
+		"""Get the value of a key in the cache.
+
+		:param key: Key to be retrieved
+		:param boolean allow_expired: If set to True, entries that have already expired will still be returned.
+		:return: Value of the requested key in the cache
+		:raises KeyError: No valid entry for the key found."""
+
+		if key not in self.cache: raise KeyError()
+
+		value = self.cache[key]
+		if isinstance(value,_DiskReference):
+			value = load(self._file(value.filename),folder=_config["folder"])
+		if allow_expired: return value
+
+		now_stamp = int(datetime.datetime.utcnow().timestamp())
+		cache_stamp = self.times.get(key)
+
+
+
+		if value is None and (now_stamp - cache_stamp) < self.maxage_negative: return value
+		if value is not None and (now_stamp - cache_stamp) < self.maxage: return value
+
+		raise KeyError()
+
+	def add(self,key,value):
+		"""Add an entry to the cache.
+
+		:param key: Key to be added
+		:param value: Value of this entry"""
+
+		# remove old file
+		if key in self.cache and isinstance(self.cache[key],_DiskReference):
+			delete(self._file(self.cache[key].filename),folder=_config["folder"])
+
+		self.cache[key] = value
+		self.times[key] = int(datetime.datetime.utcnow().timestamp())
+
+		self._onupdate()
+
+	def flush(self):
+		"""Flush all expired entries from the cache. This is normally done lazily when needed, so this function does not need to be called manually."""
+
+		now_stamp = int(datetime.datetime.utcnow().timestamp())
+
+		for key in list(self.cache.keys()):
+			value = self.cache[key]
+			cache_stamp = self.times.get(key)
+
+			if value is None and (now_stamp - cache_stamp) > self.maxage_negative:
+				if isinstance(self.cache[key],_DiskReference): delete(self._file(self.cache[key].filename),folder=_config["folder"])
+				del self.cache[key]
+				del self.times[key]
+			if value is not None and (now_stamp - cache_stamp) > self.maxage:
+				if isinstance(self.cache[key],_DiskReference): delete(self._file(self.cache[key].filename),folder=_config["folder"])
+				del self.cache[key]
+				del self.times[key]
+
+
+	def _onupdate(self):
+		self.changed = True
+
+	@repeatdaily
+	def _maintenance(self):
+		if self.changed:
+			if self._size() > self.maxmemory:
+				#flush anyway expired entries
+				self.flush()
+
+			while self._size() > self.maxmemory:
+				#serialize oldest entry
+				keys = list(self.times.keys())
+				keys.sort(key=lambda k:self.times[k])
+				print(keys)
+				print(self.cache)
+				keys = [k for k in keys if not isinstance(self.cache[k],_DiskReference)]
+				movekey = keys[0]
+				self._memorytodisk(movekey)
+
+			while self._disksize() > self.maxstorage:
+				keys = list(self.times.keys())
+				keys.sort(key=lambda k:self.times[k])
+				keys = [k for k in keys if isinstance(self.cache[k],_DiskReference)]
+				delkey = keys[0]
+				print("Deleting " + delkey)
+				del self.cache[delkey]
+				del self.times[delkey]
+
+			save((self.cache,self.times),self._file(),folder=_config["folder"])
+
+			self.changed = False
+
+	def _memorytodisk(self,key):
+		print("Moving " + key + " from memory to disk")
+		self.counter += 1
+		value = self.cache[key]
+		filename = str(self.counter)
+		save(value,self._file(filename),folder=_config["folder"])
+		self.cache[key] = _DiskReference(filename)
+
+	def _disktomemory(self,key):
+		print("Moving " + key + " from disk to memory")
+		filename = self.cache[key].filename
+		value = load("./" + self.name + "/" + filename,folder=_config["folder"])
+		self.cache[key] = value
+		delete(self._file(filename),folder=_config["folder"])
+
+
+	def _size(self):
+		return sys.getsizeof(pickle.dumps([self.cache[key] for key in self.cache if not isinstance(self.cache[key],_DiskReference)]))
+
+	def _disksize(self):
+		return sum(os.path.getsize("./" + _config["folder"] + "/" + self.name + "/" + f) for f in os.listdir("./" + _config["folder"] + "/" + self.name))
+
+	# gets a relative filename for keys of this deepcache object
+	def _file(self,name=None):
+		if name is None: name = "root"
+		return os.path.join(self.name,name)
 
 
 # decorator

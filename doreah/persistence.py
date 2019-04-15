@@ -53,6 +53,18 @@ def load(name,folder=DEFAULT):
 
 	return ob
 
+@defaultarguments(_config,folder="folder")
+def delete(name,folder=DEFAULT):
+	"""Deletes a serialized data structure from disk.
+
+	:param string name: File name
+	:param string folder: Custom folder where the file is stored"""
+
+	filename = os.path.join(folder,name + ".gilly")
+	try:
+		os.remove(filename)
+	except:
+		pass
 
 
 # now check local configuration file
