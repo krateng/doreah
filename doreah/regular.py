@@ -57,7 +57,7 @@ def runyearly(func):
 	t = Timer(5,self_scheduling_func)
 	t.daemon = True
 	t.start()
-	return self_scheduling_func
+	return func
 
 
 def repeatyearly(func):
@@ -96,7 +96,7 @@ def runmonthly(func):
 	t = Timer(5,self_scheduling_func)
 	t.daemon = True
 	t.start()
-	return self_scheduling_func
+	return func
 
 
 def repeatmonthly(func):
@@ -135,7 +135,7 @@ def rundaily(func):
 	t = Timer(5,self_scheduling_func)
 	t.daemon = True
 	t.start()
-	return self_scheduling_func
+	return func
 
 
 def repeatdaily(func):
@@ -173,7 +173,7 @@ def _runoften(func):
 	t = Timer(5,self_scheduling_func)
 	t.daemon = True
 	t.start()
-	return self_scheduling_func
+	return func
 
 
 def _repeatoften(func):
