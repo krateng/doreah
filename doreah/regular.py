@@ -22,9 +22,26 @@ def config(autostart=True):
 config()
 
 
-
 def yearly(func):
-	"""Decorator to make the function repeat execution every year."""
+	"""Decorator for yearly functions."""
+	if _config["autostart"]: return runyearly(func)
+	else: return repeatyearly(func)
+
+def monthly(func):
+	"""Decorator for monthly functions."""
+	if _config["autostart"]: return runmonthly(func)
+	else: return repeatmonthly(func)
+
+def daily(func):
+	"""Decorator for daily functions."""
+	if _config["autostart"]: return rundaily(func)
+	else: return repeatdaily(func)
+
+
+
+
+def runyearly(func):
+	"""Decorator to make the function execute on first definition as well as every year."""
 
 	def self_scheduling_func():
 		# execute function
@@ -37,22 +54,33 @@ def yearly(func):
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
-	if _config["autostart"]:
-		t = Timer(5,self_scheduling_func)
+	t = Timer(5,self_scheduling_func)
+	t.daemon = True
+	t.start()
+	return self_scheduling_func
+
+
+def repeatyearly(func):
+	"""Decorator to make the function repeat every new year after being called once."""
+
+	def self_scheduling_func(*args,**kwargs):
+		# execute function
+		func(*args,**kwargs)
+
+		# schedule next execution
+		now = datetime.datetime.utcnow()
+		nextyear = datetime.datetime(now.year+1,1,1)
+		wait = nextyear.timestamp() - now.timestamp() + 5
+		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
+
+	def starter(*args,**kwargs):
+		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
 		t.daemon = True
 		t.start()
-		return self_scheduling_func
+	return starter
 
-	# if we call it manually, we need to make sure the first call creates a new thread
-	else:
-		def starter():
-			t = Thread(target=self_scheduling_func)
-			t.daemon = True
-			t.start()
-		return starter
-
-def monthly(func):
-	"""Decorator to make the function repeat execution every month."""
+def runmonthly(func):
+	"""Decorator to make the function execute on first definition as well as every month."""
 
 	def self_scheduling_func():
 		# execute function
@@ -65,22 +93,33 @@ def monthly(func):
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
-	if _config["autostart"]:
-		t = Timer(5,self_scheduling_func)
+	t = Timer(5,self_scheduling_func)
+	t.daemon = True
+	t.start()
+	return self_scheduling_func
+
+
+def repeatmonthly(func):
+	"""Decorator to make the function repeat every new month after being called once."""
+
+	def self_scheduling_func(*args,**kwargs):
+		# execute function
+		func(*args,**kwargs)
+
+		# schedule next execution
+		now = datetime.datetime.utcnow()
+		nextmonth = datetime.datetime(now.year,now.month + 1,1) if now.month != 12 else datetime.datetime(now.year+1,1,1)
+		wait = nextmonth.timestamp() - now.timestamp() + 5
+		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
+
+	def starter(*args,**kwargs):
+		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
 		t.daemon = True
 		t.start()
-		return self_scheduling_func
+	return starter
 
-	# if we call it manually, we need to make sure the first call creates a new thread
-	else:
-		def starter():
-			t = Thread(target=self_scheduling_func)
-			t.daemon = True
-			t.start()
-		return starter
-
-def daily(func):
-	"""Decorator to make the function repeat execution every day."""
+def rundaily(func):
+	"""Decorator to make the function execute on first definition as well as every day."""
 
 	def self_scheduling_func():
 		# execute function
@@ -93,23 +132,33 @@ def daily(func):
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
-	if _config["autostart"]:
-		t = Timer(5,self_scheduling_func)
+	t = Timer(5,self_scheduling_func)
+	t.daemon = True
+	t.start()
+	return self_scheduling_func
+
+
+def repeatdaily(func):
+	"""Decorator to make the function repeat every new day after being called once."""
+
+	def self_scheduling_func(*args,**kwargs):
+		# execute function
+		func(*args,**kwargs)
+
+		# schedule next execution
+		now = datetime.datetime.utcnow()
+		nextday = datetime.datetime(now.year,now.month,now.day) + datetime.timedelta(days=1)
+		wait = nextday.timestamp() - now.timestamp() + 5
+		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
+
+	def starter(*args,**kwargs):
+		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
 		t.daemon = True
 		t.start()
-		return self_scheduling_func
-
-	# if we call it manually, we need to make sure the first call creates a new thread
-	else:
-		def starter():
-			t = Thread(target=self_scheduling_func)
-			t.daemon = True
-			t.start()
-		return starter
+	return starter
 
 #for testing
-def _often(func):
-
+def _runoften(func):
 	def self_scheduling_func():
 		# execute function
 		func()
@@ -118,21 +167,29 @@ def _often(func):
 		wait = 5
 		Timer(wait,self_scheduling_func).start()
 
+
 	# now execute it for the first time
-	if _config["autostart"]:
-		t = Timer(5,self_scheduling_func)
+
+	t = Timer(5,self_scheduling_func)
+	t.daemon = True
+	t.start()
+	return self_scheduling_func
+
+
+def _repeatoften(func):
+	def self_scheduling_func(*args,**kwargs):
+		# execute function
+		func(*args,**kwargs)
+
+		# schedule next execution
+		wait = 5
+		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
+
+	def starter(*args,**kwargs):
+		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
 		t.daemon = True
 		t.start()
-		return self_scheduling_func
-
-	# if we call it manually, we need to make sure the first call creates a new thread
-	else:
-		def starter():
-			t = Thread(target=self_scheduling_func)
-			t.daemon = True
-			t.start()
-		return starter
-
+	return starter
 
 
 # now check local configuration file

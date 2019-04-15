@@ -7,6 +7,7 @@ import pickle
 
 from ._internal import DEFAULT, defaultarguments, doreahconfig
 from .persistence import save, load
+from .regular import repeatdaily
 
 _config = {}
 
@@ -54,10 +55,17 @@ class Cache:
 			obj = load(name,folder=_config["folder"])
 			if obj is not None:
 				self.cache,self.times = obj
+				self.changed = False
+				self._savetodisk()
 				return
 		# if either no object loaded, or not persistent in the first place
 		self.cache = {}
 		self.times = {}
+		self.changed = False
+		self._savetodisk()
+
+	def __del__(self):
+		self._savetodisk()
 
 #	def create(name="defaultcache",**kwargs):
 #		"""Create a new Cache object, preinitializing it from disk if applicable
@@ -166,12 +174,17 @@ class Cache:
 		self._onupdate()
 
 	def _onupdate(self):
-		if self.persistent:
-			#save(self,self.name,folder=_config["folder"])
-			save((self.cache,self.times),self.name,folder=_config["folder"])
+		self.changed = True
+
 
 	def _size(self):
 		return sys.getsizeof(pickle.dumps(self.cache))
+
+	@repeatdaily
+	def _savetodisk(self):
+		if self.persistent and self.changed:
+			save((self.cache,self.times),self.name,folder=_config["folder"])
+			self.changed = False
 
 
 # decorator
