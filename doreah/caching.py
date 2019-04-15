@@ -56,16 +56,16 @@ class Cache:
 			if obj is not None:
 				self.cache,self.times = obj
 				self.changed = False
-				self._savetodisk()
+				self._maintenance()
 				return
 		# if either no object loaded, or not persistent in the first place
 		self.cache = {}
 		self.times = {}
 		self.changed = False
-		self._savetodisk()
+		self._maintenance()
 
 	def __del__(self):
-		self._savetodisk()
+		self._maintenance()
 
 #	def create(name="defaultcache",**kwargs):
 #		"""Create a new Cache object, preinitializing it from disk if applicable
@@ -140,19 +140,6 @@ class Cache:
 		self.cache[key] = value
 		self.times[key] = int(datetime.datetime.utcnow().timestamp())
 
-
-		if len(self.cache) > self.maxsize or self._size() > self.maxmemory:
-			#flush anyway expired entries
-			self.flush()
-
-		while len(self.cache) > self.maxsize or self._size() > self.maxmemory:
-			#expire oldest entry
-			keys = list(self.times.keys())
-			keys.sort(key=lambda k:self.times[k])
-			delkey = keys[0]
-			del self.cache[delkey]
-			del self.times[delkey]
-
 		self._onupdate()
 
 	def flush(self):
@@ -171,20 +158,35 @@ class Cache:
 				del self.cache[key]
 				del self.times[key]
 
-		self._onupdate()
 
 	def _onupdate(self):
 		self.changed = True
+
+	@repeatdaily
+	def _maintenance(self):
+		if self.changed:
+			if len(self.cache) > self.maxsize or self._size() > self.maxmemory:
+				#flush anyway expired entries
+				self.flush()
+
+			while len(self.cache) > self.maxsize or self._size() > self.maxmemory:
+				#expire oldest entry
+				keys = list(self.times.keys())
+				keys.sort(key=lambda k:self.times[k])
+				delkey = keys[0]
+				del self.cache[delkey]
+				del self.times[delkey]
+
+			if self.persistent:
+				save((self.cache,self.times),self.name,folder=_config["folder"])
+
+			self.changed = False
+
 
 
 	def _size(self):
 		return sys.getsizeof(pickle.dumps(self.cache))
 
-	@repeatdaily
-	def _savetodisk(self):
-		if self.persistent and self.changed:
-			save((self.cache,self.times),self.name,folder=_config["folder"])
-			self.changed = False
 
 
 # decorator

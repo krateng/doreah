@@ -164,7 +164,7 @@ def _runoften(func):
 		func()
 
 		# schedule next execution
-		wait = 5
+		wait = 15
 		Timer(wait,self_scheduling_func).start()
 
 
@@ -182,7 +182,7 @@ def _repeatoften(func):
 		func(*args,**kwargs)
 
 		# schedule next execution
-		wait = 5
+		wait = 15
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
