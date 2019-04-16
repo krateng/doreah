@@ -166,7 +166,7 @@ class Cache:
 	def _onupdate(self):
 		self.changed = True
 
-	@repeatdaily
+	@repeathourly
 	def _maintenance(self):
 		if self.changed:
 			if len(self.cache) > self.maxsize or self._size() > self.maxmemory:
@@ -224,7 +224,7 @@ class DeepCache(Cache):
 			self.cache = {}
 			self.times = {}
 			self.counter = 0
-			
+
 		self.changed = False
 
 		self._maintenance()
@@ -291,7 +291,7 @@ class DeepCache(Cache):
 	def _onupdate(self):
 		self.changed = True
 
-	@repeatdaily
+	@repeathourly
 	def _maintenance(self):
 		if self.changed:
 			if self._size() > self.maxmemory:
