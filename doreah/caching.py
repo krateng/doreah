@@ -6,7 +6,7 @@ import sys
 import pickle
 
 from ._internal import DEFAULT, defaultarguments, doreahconfig
-from .persistence import save, load, delete
+from .persistence import save, load, delete, size
 from .regular import repeatdaily
 
 _config = {}
@@ -218,15 +218,15 @@ class DeepCache(Cache):
 
 		try:
 			obj = load(self._file(),folder=_config["folder"])
-			self.cache,self.times = obj
+			self.cache,self.times,self.counter = obj
 			self.changed = False
 		except:
 			self.cache = {}
 			self.times = {}
-		# if either no object loaded, or not persistent in the first place
-
+			self.counter = 0
+			
 		self.changed = False
-		self.counter = 0
+
 		self._maintenance()
 
 	def get(self,key,allow_expired=False):
@@ -302,22 +302,29 @@ class DeepCache(Cache):
 				#serialize oldest entry
 				keys = list(self.times.keys())
 				keys.sort(key=lambda k:self.times[k])
-				print(keys)
-				print(self.cache)
 				keys = [k for k in keys if not isinstance(self.cache[k],_DiskReference)]
-				movekey = keys[0]
-				self._memorytodisk(movekey)
+				try:
+					movekey = keys[0]
+					self._memorytodisk(movekey)
+				except:
+					break
 
 			while self._disksize() > self.maxstorage:
+				print("Disk size " + str(self._disksize()))
 				keys = list(self.times.keys())
 				keys.sort(key=lambda k:self.times[k])
 				keys = [k for k in keys if isinstance(self.cache[k],_DiskReference)]
-				delkey = keys[0]
-				print("Deleting " + delkey)
-				del self.cache[delkey]
-				del self.times[delkey]
+				try:
+					delkey = keys[0]
+					print("Deleting " + delkey)
+					delete(self._file(self.cache[delkey].filename),folder=_config["folder"])
+					del self.cache[delkey]
+					del self.times[delkey]
+				except:
+					break
 
-			save((self.cache,self.times),self._file(),folder=_config["folder"])
+
+			save((self.cache,self.times,self.counter),self._file(),folder=_config["folder"])
 
 			self.changed = False
 
@@ -341,7 +348,12 @@ class DeepCache(Cache):
 		return sys.getsizeof(pickle.dumps([self.cache[key] for key in self.cache if not isinstance(self.cache[key],_DiskReference)]))
 
 	def _disksize(self):
-		return sum(os.path.getsize("./" + _config["folder"] + "/" + self.name + "/" + f) for f in os.listdir("./" + _config["folder"] + "/" + self.name))
+		#return sum(os.path.getsize("./" + _config["folder"] + "/" + self.name + "/" + f) for f in os.listdir("./" + _config["folder"] + "/" + self.name))
+		sumsize = 0
+		for key in self.cache:
+			if isinstance(self.cache[key],_DiskReference):
+				sumsize += size(self._file(self.cache[key].filename),folder=_config["folder"])
+		return sumsize
 
 	# gets a relative filename for keys of this deepcache object
 	def _file(self,name=None):

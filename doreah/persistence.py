@@ -27,7 +27,7 @@ def save(data,name,folder=DEFAULT):
 	:param string name: File name to be used
 	:param string folder: Custom folder to save the file in"""
 
-	filename = os.path.join(folder,name + ".gilly")
+	filename = os.path.join(folder,name)
 
 	try:
 		with gopen(filename,"wb") as fl:
@@ -44,7 +44,7 @@ def load(name,folder=DEFAULT):
 	:param string folder: Custom folder where the file is stored
 	:return: Data object"""
 
-	filename = os.path.join(folder,name + ".gilly")
+	filename = os.path.join(folder,name)
 
 	try:
 		with gopen(filename,"rb") as fl:
@@ -60,11 +60,21 @@ def delete(name,folder=DEFAULT):
 	:param string name: File name
 	:param string folder: Custom folder where the file is stored"""
 
-	filename = os.path.join(folder,name + ".gilly")
+	filename = os.path.join(folder,name)
 	try:
 		os.remove(filename)
 	except:
 		pass
+
+@defaultarguments(_config,folder="folder")
+def size(name,folder=DEFAULT):
+	"""Returns the size of a serialized object.
+
+	:param string name: File name
+	:param string folder: Custom folder where the file is stored"""
+
+	filename = os.path.join(folder,name)
+	return os.path.getsize(filename)
 
 
 # now check local configuration file
