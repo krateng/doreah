@@ -23,22 +23,22 @@ config()
 
 
 def yearly(func):
-	"""Decorator for yearly functions."""
+	"""Decorator for yearly functions. Depending on configuration, is equivalent to either :meth:`runyearly` or :meth:`repeatyearly`."""
 	if _config["autostart"]: return runyearly(func)
 	else: return repeatyearly(func)
 
 def monthly(func):
-	"""Decorator for monthly functions."""
+	"""Decorator for monthly functions. Depending on configuration, is equivalent to either :meth:`runmonthly` or :meth:`repeatmonthly`."""
 	if _config["autostart"]: return runmonthly(func)
 	else: return repeatmonthly(func)
 
 def daily(func):
-	"""Decorator for daily functions."""
+	"""Decorator for daily functions. Depending on configuration, is equivalent to either :meth:`rundaily` or :meth:`repeatdaily`."""
 	if _config["autostart"]: return rundaily(func)
 	else: return repeatdaily(func)
 
 def hourly(func):
-	"""Decorator for hourly functions."""
+	"""Decorator for hourly functions. Depending on configuration, is equivalent to either :meth:`runhourly` or :meth:`repeathourly`."""
 	if _config["autostart"]: return runhourly(func)
 	else: return repeathourly(func)
 

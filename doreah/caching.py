@@ -7,7 +7,7 @@ import pickle
 
 from ._internal import DEFAULT, defaultarguments, doreahconfig
 from .persistence import save, load, delete, size
-from .regular import repeatdaily
+from .regular import repeathourly
 
 _config = {}
 
