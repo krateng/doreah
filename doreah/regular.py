@@ -37,6 +37,11 @@ def daily(func):
 	if _config["autostart"]: return rundaily(func)
 	else: return repeatdaily(func)
 
+def hourly(func):
+	"""Decorator for hourly functions."""
+	if _config["autostart"]: return runhourly(func)
+	else: return repeathourly(func)
+
 
 
 
@@ -156,6 +161,51 @@ def repeatdaily(func):
 		t.daemon = True
 		t.start()
 	return starter
+
+
+
+def runhourly(func):
+	"""Decorator to make the function execute on first definition as well as every hour."""
+
+	def self_scheduling_func():
+		# execute function
+		func()
+
+		# schedule next execution
+		now = datetime.datetime.utcnow()
+		nexthour = datetime.datetime(now.year,now.month,now.day,now.hour) + datetime.timedelta(hours=1)
+		wait = nexthour.timestamp() - now.timestamp() + 5
+		Timer(wait,self_scheduling_func).start()
+
+	# now execute it for the first time
+	t = Timer(5,self_scheduling_func)
+	t.daemon = True
+	t.start()
+	return func
+
+
+def repeathourly(func):
+	"""Decorator to make the function repeat every new hour after being called once."""
+
+	def self_scheduling_func(*args,**kwargs):
+		# execute function
+		func(*args,**kwargs)
+
+		# schedule next execution
+		now = datetime.datetime.utcnow()
+		nexthour = datetime.datetime(now.year,now.month,now.day,now.hour) + datetime.timedelta(hours=1)
+		wait = nexthour.timestamp() - now.timestamp() + 5
+		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
+
+	def starter(*args,**kwargs):
+		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
+		t.daemon = True
+		t.start()
+	return starter
+
+
+
+
 
 #for testing
 def _runoften(func):
