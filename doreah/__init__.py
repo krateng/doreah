@@ -1,4 +1,6 @@
 name = "doreah"
+version = 0,6,2
+
 
 __all__ = [
 	"caching",
