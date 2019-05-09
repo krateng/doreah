@@ -299,10 +299,13 @@ class DeepCache(Cache):
 				self.flush()
 
 			while self._size() > self.maxmemory:
-				#serialize oldest entry
+				#serialize biggest entry
 				keys = list(self.times.keys())
-				keys.sort(key=lambda k:self.times[k])
+				keys.sort(key=lambda k:sys.getsizeof(pickle.dumps(self.cache[k])),reverse=True)
 				keys = [k for k in keys if not isinstance(self.cache[k],_DiskReference)]
+				if sys.getsizeof(pickle.dumps(self.cache[keys[0]])) < (512 * 1024):
+					break
+					# don't serialize tiny stuff
 				try:
 					movekey = keys[0]
 					self._memorytodisk(movekey)
