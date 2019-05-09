@@ -110,22 +110,29 @@ class DiskDict:
 
 	:param integer maxmemory: Soft memory limit (in bytes), not meant for precision
 	:param integer maxstorage: Soft disk space limit (in bytes), not meant for precision
-	:param string name: Directory name used for storage"""
+	:param string name: Directory name used for storage
+	:param string folder: Parent directory"""
 
-	def __init__(self,maxmemory=math.inf,maxstorage=1024*1024*1024*4,name="diskdict"):
+	@defaultarguments(_config,folder="folder")
+	def __init__(self,maxmemory=math.inf,maxstorage=1024*1024*1024*4,name="diskdict",folder=DEFAULT):
 
 		self.maxmemory = maxmemory
 		self.maxstorage = maxstorage
 
 		self.name = name
-		self.folder = os.path.join(_config["folder"],name)
+		self.folder = os.path.join(folder,name)
 
 
 		self.cache = {}
 		self.cache_unhashable = {}
 
 
-
+	def __contains__(self,key):
+		try:
+			self.get(key)
+			return True
+		except:
+			return False
 	def __getitem__(self,key):
 		return self.get(key)
 	def __setitem__(self,key,value):
@@ -154,7 +161,7 @@ class DiskDict:
 		if os.path.exists(os.path.join(self.folder,hashvalue)):
 			possibilities = os.listdir(os.path.join(self.folder,hashvalue))
 			for p in possibilities:
-				result = load(os.path.join(self.name,hashvalue,p))
+				result = load(os.path.join(self.name,hashvalue,p),folder=self.folder)
 				if result[0] == key:
 					val = result[1]
 					try:
@@ -174,105 +181,15 @@ class DiskDict:
 		:param value: Value of this entry"""
 
 		hashvalue = str(_hash(key))
+
+		# cache
+		try:
+			self.cache[key] = value
+		except TypeError:
+			self.cache_unhashable[hashvalue] = value
+
 		name = str(random.uniform(1000000000,9999999999)).replace(".","")
-		save((key,value),os.path.join(self.name,hashvalue,name))
-
-
-	def flush(self):
-		"""Flush all expired entries from the cache. This is normally done lazily when needed, so this function does not need to be called manually."""
-
-		now_stamp = int(datetime.datetime.utcnow().timestamp())
-
-		for key in list(self.cache.keys()):
-			value = self.cache[key]
-			cache_stamp = self.times.get(key)
-
-			if value is None and (now_stamp - cache_stamp) > self.maxage_negative:
-				if isinstance(self.cache[key],_DiskReference): delete(self._file(self.cache[key].filename),folder=_config["folder"])
-				del self.cache[key]
-				del self.times[key]
-			if value is not None and (now_stamp - cache_stamp) > self.maxage:
-				if isinstance(self.cache[key],_DiskReference): delete(self._file(self.cache[key].filename),folder=_config["folder"])
-				del self.cache[key]
-				del self.times[key]
-
-
-	def _onupdate(self):
-		self.changed = True
-
-
-	def _maintenance(self):
-		if self.changed:
-			if self._size() > self.maxmemory:
-				#flush anyway expired entries
-				self.flush()
-
-			while self._size() > self.maxmemory:
-				#serialize biggest entry
-				keys = list(self.times.keys())
-				keys.sort(key=lambda k:sys.getsizeof(pickle.dumps(self.cache[k])),reverse=True)
-				keys = [k for k in keys if not isinstance(self.cache[k],_DiskReference)]
-				if sys.getsizeof(pickle.dumps(self.cache[keys[0]])) < (512 * 1024):
-					break
-					# don't serialize tiny stuff
-				try:
-					movekey = keys[0]
-					self._memorytodisk(movekey)
-				except:
-					break
-
-			while self._disksize() > self.maxstorage:
-				print("Disk size " + str(self._disksize()))
-				keys = list(self.times.keys())
-				keys.sort(key=lambda k:self.times[k])
-				keys = [k for k in keys if isinstance(self.cache[k],_DiskReference)]
-				try:
-					delkey = keys[0]
-					print("Deleting " + delkey)
-					delete(self._file(self.cache[delkey].filename),folder=_config["folder"])
-					del self.cache[delkey]
-					del self.times[delkey]
-				except:
-					break
-
-
-			save((self.cache,self.times,self.counter),self._file(),folder=_config["folder"])
-
-			self.changed = False
-
-	def _memorytodisk(self,key):
-		print("Moving " + key + " from memory to disk")
-		self.counter += 1
-		value = self.cache[key]
-		filename = str(self.counter)
-		save(value,self._file(filename),folder=_config["folder"])
-		self.cache[key] = _DiskReference(filename)
-
-	def _disktomemory(self,key):
-		print("Moving " + key + " from disk to memory")
-		filename = self.cache[key].filename
-		value = load("./" + self.name + "/" + filename,folder=_config["folder"])
-		self.cache[key] = value
-		delete(self._file(filename),folder=_config["folder"])
-
-
-	def _size(self):
-		return sys.getsizeof(pickle.dumps([self.cache[key] for key in self.cache if not isinstance(self.cache[key],_DiskReference)]))
-
-	def _disksize(self):
-		#return sum(os.path.getsize("./" + _config["folder"] + "/" + self.name + "/" + f) for f in os.listdir("./" + _config["folder"] + "/" + self.name))
-		sumsize = 0
-		for key in self.cache:
-			if isinstance(self.cache[key],_DiskReference):
-				sumsize += size(self._file(self.cache[key].filename),folder=_config["folder"])
-		return sumsize
-
-	# gets a relative filename for keys of this deepcache object
-	def _file(self,name=None):
-		if name is None: name = "root"
-		return os.path.join(self.name,name)
-
-
+		save((key,value),os.path.join(self.name,hashvalue,name),folder=self.folder)
 
 
 
