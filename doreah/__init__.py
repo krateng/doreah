@@ -1,11 +1,12 @@
 name = "doreah"
-version = 0,7,1
+version = 0,7,2
 
 
 __all__ = [
 	"caching",
 	"logging",
 	"persistence",
+	"regular",
 	"settings",
 	"timing",
 	"tsv"
@@ -23,6 +24,6 @@ def deprecated(func):
 
 	def newfunc(*args,**kwargs):
 		print("\033[93m" + "Function " + func.__name__ + " is deprecated!" + "\033[0m")
-		func(*args,**kwargs)
+		return func(*args,**kwargs)
 
 	return newfunc

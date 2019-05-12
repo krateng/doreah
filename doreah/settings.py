@@ -214,7 +214,7 @@ def update_settings(file,settings,create_new=False):
 	if create_new:
 		# settings that were not present in the file
 		for key in settings:
-			newlines.append(key + " = " + settings[key] + "\n")
+			newlines.append(key + " = " + str(settings[key]) + "\n")
 
 	with open(file,"w") as newfile:
 		newfile.write("".join(newlines))
