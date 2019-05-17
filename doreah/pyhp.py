@@ -64,7 +64,7 @@ def _parse_node(node,d):
 				nodestoreturn += [node.tail]
 				return nodestoreturn
 			else:
-				return []
+				return [node.tail]
 
 
 		#### FOR IN
