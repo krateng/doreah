@@ -5,6 +5,7 @@ Modules
    caching
    logging
    persistence
+   pyhp
    regular
    settings
    timing
