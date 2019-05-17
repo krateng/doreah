@@ -72,7 +72,7 @@ def _parse_node(node,d):
 		elif _attr(node,"for") is not None and _attr(node,"in") is not None:
 			nodestoreturn = []
 			# for loop of the elements
-			for element in d[_attr(node,"in")]:
+			for element in eval(_attr(node,"in"),d):
 				# now go through the nodes each time
 				nodestoreturn += [node.text]
 				for sn in node:
