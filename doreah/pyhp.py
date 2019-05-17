@@ -1,5 +1,6 @@
 from lxml import etree
 from copy import deepcopy
+import re
 
 from ._internal import DEFAULT, defaultarguments, doreahconfig
 
@@ -51,6 +52,17 @@ def parse(src,d):
 
 def _parse_node(node,d):
 
+	## replace attributes
+
+	for name,value in node.attrib.items():
+		vars = re.findall("{.*?}",value)
+		for v in vars:
+			vname = v[1:-1]
+			node.attrib[name] = value.replace(v,str(eval(vname,d)))
+
+
+
+	## parse pyhp nodes
 
 	if node.tag == "pyhp":
 
@@ -91,6 +103,9 @@ def _parse_node(node,d):
 			return [str(eval(_attr(node,"echo"),d))] + [node.tail]
 
 		return []
+
+
+	## parse normal nodes
 
 	else:
 		subnodes = [n for n in node]
