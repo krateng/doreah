@@ -13,6 +13,15 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
+from unittest.mock import MagicMock
+
+class Mock(MagicMock):
+	@classmethod
+	def __getattr__(cls,name):
+		return MagicMock()
+
+mock_modules = ["lxml"]
+sys.modules.update((modname, Mock()) for modname in mock_modules)
 
 
 # -- Project information -----------------------------------------------------
@@ -30,6 +39,8 @@ author = 'Johannes Krattenmacher'
 extensions = [
 	"sphinx.ext.autodoc"
 ]
+
+autodoc_mock_imports = ["django"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']

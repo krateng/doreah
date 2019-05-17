@@ -1,6 +1,26 @@
 from lxml import etree
 from copy import deepcopy
 
+from ._internal import DEFAULT, defaultarguments, doreahconfig
+
+_config = {}
+
+
+# set configuration
+def config():
+	"""Configures default values for this module.
+
+	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
+	global _config
+
+# initial config on import, set everything to default
+config()
+
+
+
+
+
+
 def file(path,d):
 	"""Parses a pyhp source file and returns the generated html code.
 
