@@ -95,7 +95,7 @@ def _parse_node(node,d,interpret):
 					# parse with the normal dict and the current element of the loop
 					sn = deepcopy(sn)
 					nodestoreturn += _parse_node(sn,{**d, **{_attr(node,"for"):element}},interpret)
-				nodestoreturn += [node.tail]
+			nodestoreturn += [node.tail]
 
 			return nodestoreturn
 
