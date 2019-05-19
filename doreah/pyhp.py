@@ -64,7 +64,10 @@ def _parse_node(node,d,interpret):
 		vars = re.findall("{.*?}",value)
 		for v in vars:
 			vname = v[1:-1]
-			value = value.replace(v,interpret(eval(vname,d)))
+			try:
+				value = value.replace(v,interpret(eval(vname,d)))
+			except:
+				pass
 
 		node.attrib[name] = value
 
