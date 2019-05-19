@@ -51,7 +51,9 @@ def parse(src,d,interpret=DEFAULT):
 
 	doc = _parse_node(doc,d,interpret)[0]
 
-	return etree.tostring(doc)
+	return etree.tostring(doc).decode().replace("&gt;",">").replace("&lt;","<")
+	# yes I know
+	# it's a temporary thing okay
 
 
 def _parse_node(node,d,interpret):
