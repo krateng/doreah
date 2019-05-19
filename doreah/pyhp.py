@@ -58,18 +58,7 @@ def parse(src,d,interpret=DEFAULT):
 
 def _parse_node(node,d,interpret):
 
-	## replace attributes
 
-	for name,value in node.attrib.items():
-		vars = re.findall("{.*?}",value)
-		for v in vars:
-			vname = v[1:-1]
-			try:
-				value = value.replace(v,interpret(eval(vname,d)))
-			except:
-				pass
-
-		node.attrib[name] = value
 
 	## parse pyhp nodes
 
@@ -117,6 +106,22 @@ def _parse_node(node,d,interpret):
 	## parse normal nodes
 
 	else:
+
+		## replace attributes (not necessary in pyhp nodes)
+
+		for name,value in node.attrib.items():
+			vars = re.findall("{.*?}",value)
+			for v in vars:
+				vname = v[1:-1]
+				try:
+					value = value.replace(v,interpret(eval(vname,d)))
+				except:
+					pass
+
+			node.attrib[name] = value
+
+
+
 		subnodes = [n for n in node]
 		newsubnodes = []
 		for subnode in subnodes:
