@@ -8,11 +8,12 @@ _config = {}
 
 
 # set configuration
-def config():
+def config(interpret=str):
 	"""Configures default values for this module.
 
 	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
 	global _config
+	_config["interpret"] = interpret
 
 # initial config on import, set everything to default
 config()
@@ -21,36 +22,39 @@ config()
 
 
 
-
-def file(path,d):
+@defaultarguments(_config,interpret="interpret")
+def file(path,d,interpret=DEFAULT):
 	"""Parses a pyhp source file and returns the generated html code.
 
 	:param string path: Location of the pyhp source file
 	:param dict d: Variables dictionary
+	:param function interpret: Function that determines string representations of variables
 	:return: HTML source
 	"""
 
 	with open(path,"r") as f:
 		content = f.read()
 
-	return parse(content,d)
+	return parse(content,d,interpret=interpret)
 
 
-def parse(src,d):
+@defaultarguments(_config,interpret="interpret")
+def parse(src,d,interpret=DEFAULT):
 	"""Parses pyhp source and returns the generated html code.
 
 	:param string src: Source string
 	:param dict d: Variables dictionary
+	:param function interpret: Function that determines string representations of variables
 	:return: HTML source
 	"""
 	doc = etree.XML(src)
 
-	doc = _parse_node(doc,d)[0]
+	doc = _parse_node(doc,d,interpret)[0]
 
 	return etree.tostring(doc)
 
 
-def _parse_node(node,d):
+def _parse_node(node,d,interpret):
 
 	## replace attributes
 
@@ -58,9 +62,9 @@ def _parse_node(node,d):
 		vars = re.findall("{.*?}",value)
 		for v in vars:
 			vname = v[1:-1]
-			node.attrib[name] = value.replace(v,str(eval(vname,d)))
+			value = value.replace(v,interpret(eval(vname,d)))
 
-
+		node.attrib[name] = value
 
 	## parse pyhp nodes
 
@@ -72,7 +76,7 @@ def _parse_node(node,d):
 			if eval(_attr(node,"if"),d):
 				nodestoreturn = [node.text]
 				for sn in node:
-					nodestoreturn += _parse_node(sn,d)
+					nodestoreturn += _parse_node(sn,d,interpret)
 				nodestoreturn += [node.tail]
 				return nodestoreturn
 			else:
@@ -90,7 +94,7 @@ def _parse_node(node,d):
 				for sn in node:
 					# parse with the normal dict and the current element of the loop
 					sn = deepcopy(sn)
-					nodestoreturn += _parse_node(sn,{**d, **{_attr(node,"for"):element}})
+					nodestoreturn += _parse_node(sn,{**d, **{_attr(node,"for"):element}},interpret)
 				nodestoreturn += [node.tail]
 
 			return nodestoreturn
@@ -100,7 +104,7 @@ def _parse_node(node,d):
 
 		elif _attr(node,"echo") is not None:
 			#return [d.get(node.get("echo"))]
-			return [str(eval(_attr(node,"echo"),d))] + [node.tail]
+			return [interpret(eval(_attr(node,"echo"),d))] + [node.tail]
 
 		return []
 
@@ -112,7 +116,7 @@ def _parse_node(node,d):
 		newsubnodes = []
 		for subnode in subnodes:
 			node.remove(subnode)
-			newsubnodes += _parse_node(subnode,d)
+			newsubnodes += _parse_node(subnode,d,interpret)
 
 		prev = None
 		for nsn in newsubnodes:
@@ -149,3 +153,8 @@ def _attr(node,name):
 		return res.replace(" gr "," > ").replace(" ls "," < ")
 	except:
 		return res
+
+
+
+# now check local configuration file
+_config.update(doreahconfig("pyhp"))
