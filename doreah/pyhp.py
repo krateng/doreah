@@ -82,13 +82,23 @@ def _parse_node(node,d,interpret):
 		elif _attr(node,"for") is not None and _attr(node,"in") is not None:
 			nodestoreturn = []
 			# for loop of the elements
+			first = True
 			for element in eval(_attr(node,"in"),d):
+				if not first and _attr(node,"separator") is not None:
+					nodestoreturn += [_attr(node,"separator")]
+				first = False
+
 				# now go through the nodes each time
 				nodestoreturn += [node.text]
+
 				for sn in node:
+
 					# parse with the normal dict and the current element of the loop
 					sn = deepcopy(sn)
 					nodestoreturn += _parse_node(sn,{**d, **{_attr(node,"for"):element}},interpret)
+
+
+
 			nodestoreturn += [node.tail]
 
 			return nodestoreturn
