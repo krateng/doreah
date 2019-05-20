@@ -131,8 +131,10 @@ def _parse_node(node,d,interpret):
 		prev = None
 		for nsn in newsubnodes:
 
+			if nsn is None: continue
+
 			if isinstance(nsn,str):
-				if nsn is None: continue
+
 				# string nodes need to be either the tail of their previous node, or if they're
 				# in first position, the text of the parent node
 				if prev is None:
@@ -148,6 +150,7 @@ def _parse_node(node,d,interpret):
 			else:
 				# once we encounter a real node, we can set it as prev for all following text nodes
 				prev = nsn
+
 
 		for nsn in newsubnodes:
 			if not isinstance(nsn,str) and nsn is not None:
