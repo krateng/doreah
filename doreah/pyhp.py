@@ -100,6 +100,12 @@ def _parse_node(node,d,interpret,directory=None):
 
 	if node.tag == "pyhp":
 
+		#### SAVE
+
+		if _attr(node,"save") is not None and _attr(node,"as") is not None:
+			d[_attr(node,"as")] = eval(_attr(node,"save"))
+
+
 		#### INCLUDE
 
 		if _attr(node,"include") is not None:
