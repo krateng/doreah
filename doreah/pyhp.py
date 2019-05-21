@@ -103,12 +103,16 @@ def _parse_node(node,d,interpret,directory=None):
 		#### SAVE
 
 		if _attr(node,"save") is not None and _attr(node,"as") is not None:
-			d[_attr(node,"as")] = eval(_attr(node,"save"))
+			print("d[" + _attr(node,"as") + "] = " + _attr(node,"save"))
+			d[_attr(node,"as")] = eval(_attr(node,"save"),d)
+
+			return [node.tail]
+
 
 
 		#### INCLUDE
 
-		if _attr(node,"include") is not None:
+		elif _attr(node,"include") is not None:
 			filename = _attr(node,"include")
 			if directory is None:
 				# relative to execution path
@@ -145,7 +149,12 @@ def _parse_node(node,d,interpret,directory=None):
 			nodestoreturn = []
 			# for loop of the elements
 			first = True
-			for element in eval(_attr(node,"in"),d):
+			try:
+				elements = eval(_attr(node,"in"),d)
+			except:
+				# allow invalid expressions in for loops, just ignore them
+				elements = []
+			for element in elements:
 				if not first and _attr(node,"separator") is not None:
 					nodestoreturn += [_attr(node,"separator")]
 				first = False
