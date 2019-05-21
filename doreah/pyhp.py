@@ -100,6 +100,30 @@ def _parse_node(node,d,interpret,directory=None):
 
 	if node.tag == "pyhp":
 
+		### CODE
+
+		if len(node.attrib) == 0:
+			print("Executing code!")
+			code = node.text
+			code = code.strip("\t").strip(" ")
+			code = code.split("\n")
+			if code[0] != "" or code[-1] != "":
+				print("Malformed code block!")
+			code = code[1:-1]
+			roottabs = 0
+			for char in code[0]:
+				if char == "\t" or char == " ":
+					roottabs += 1
+				else:
+					break
+
+			code = [line[roottabs:] for line in code]
+			code = "\n".join(code)
+
+			exec(code,d)
+
+			return [node.tail]
+
 		#### SAVE
 
 		if _attr(node,"save") is not None and _attr(node,"as") is not None:
@@ -125,7 +149,6 @@ def _parse_node(node,d,interpret,directory=None):
 			#	raw = f.read()
 
 			subnodes = _file(filename,d,interpret=interpret,noroot=True)
-			print(subnodes)
 
 			return subnodes + [node.tail]
 
@@ -241,10 +264,6 @@ def _parse_node(node,d,interpret,directory=None):
 			if isinstance(nsn,etree._Element):
 				node.append(nsn)
 
-		if node.tag == "head":
-			#print(newsubnodes)
-
-			print(etree.tostring(node))
 
 		return [node]
 
