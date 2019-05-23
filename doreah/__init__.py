@@ -1,5 +1,14 @@
 name = "doreah"
-version = 0,9,0
+version = 0,9,1
+versionstr = ".".join(str(n) for n in version)
+author = {
+	"name": "Johannes Krattenmacher",
+	"email": "python@krateng.dev",
+	"github": "krateng"
+}
+requires = [
+	"lxml"
+]
 
 
 __all__ = [
