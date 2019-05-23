@@ -10,3 +10,4 @@ Install with `pip install doreah`.
 ## Used by
 
 * [Maloja](https://github.com/krateng/maloja)
+* [Nimrodel](https://github.com/krateng/nimrodel)

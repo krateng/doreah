@@ -24,7 +24,7 @@ config()
 
 
 @defaultarguments(_config,interpret="interpret")
-def file(path,d,interpret=DEFAULT,noroot=False):
+def file(path,d={},interpret=DEFAULT,noroot=False):
 	"""Parses a pyhp source file and returns the generated html code.
 
 	:param string path: Location of the pyhp source file
@@ -52,7 +52,7 @@ def _file(path,d,interpret=DEFAULT,noroot=False):
 
 
 @defaultarguments(_config,interpret="interpret")
-def parse(src,d,interpret=DEFAULT,directory=None,noroot=False):
+def parse(src,d={},interpret=DEFAULT,directory=None,noroot=False):
 	"""Parses pyhp source and returns the generated html code.
 
 	:param string src: Source string
@@ -127,7 +127,7 @@ def _parse_node(node,d,interpret,directory=None):
 		#### SAVE
 
 		if _attr(node,"save") is not None and _attr(node,"as") is not None:
-			print("d[" + _attr(node,"as") + "] = " + _attr(node,"save"))
+			#print("d[" + _attr(node,"as") + "] = " + _attr(node,"save"))
 			d[_attr(node,"as")] = eval(_attr(node,"save"),d)
 
 			return [node.tail]
@@ -221,6 +221,7 @@ def _parse_node(node,d,interpret,directory=None):
 					value = value.replace(v,interpret(eval(vname,d)))
 				except:
 					pass
+					print("Error parsing:",v,"in attribute")
 
 			node.attrib[name] = value
 
@@ -280,3 +281,26 @@ def _attr(node,name):
 
 # now check local configuration file
 _config.update(doreahconfig("pyhp"))
+
+
+
+
+
+### run test server
+
+if __name__ == "__main__":
+	from bottle import get, run, static_file
+	from doreah.pyhp import file
+	import os
+
+	@get("/<path:path>")
+	def serve_file(path):
+
+		if os.path.exists(path):
+			return static_file(path)
+		if os.path.exists(path + ".html"):
+			return static_file(path + ".html")
+		elif os.path.exists(path + ".pyhp"):
+			return file(path + ".pyhp")
+
+	run(host="::",port=1337)
