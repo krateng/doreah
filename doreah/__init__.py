@@ -7,7 +7,9 @@ author = {
 	"github": "krateng"
 }
 requires = [
-	"lxml"
+	"lxml",
+	"mechanicalsoup",
+	"requests"
 ]
 
 
@@ -17,6 +19,7 @@ __all__ = [
 	"persistence",
 	"pyhp",
 	"regular",
+	"scraping"
 	"settings",
 	"timing",
 	"tsv"
