@@ -7,6 +7,7 @@ Modules
    persistence
    pyhp
    regular
+   scraping
    settings
    timing
    tsv
