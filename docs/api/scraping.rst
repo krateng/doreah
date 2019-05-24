@@ -12,6 +12,7 @@ These need to be supplied in a list as dicts with the keys `steptype` and 'instr
 the second may be omitted for steps that do not have any further instructions.
 
 The following steps are possible:
+
 * Steps that work for both single elements and lists:
 		xpath
 			follows the xpath down the tree, returns first element (node -> node or string)
@@ -47,10 +48,10 @@ elements. Since its arguments may be confusing, let's look at a simple example.
 Say we want to scrape all locations of a website that shows 3 entries per page
 and its URLs look like this:
 
-	https://coolplaces.tld/top?start=0
-	https://coolplaces.tld/top?start=3
-	https://coolplaces.tld/top?start=6
-	etc...
+	| https://coolplaces.tld/top?start=0
+	| https://coolplaces.tld/top?start=3
+	| https://coolplaces.tld/top?start=6
+	| etc...
 
 We would then supply ``base_url="https://bestgallery.tld/newest?start={page}"``,
 ``start_page=0`` and ``page_multiplier=3`` (since Page 0 needs a

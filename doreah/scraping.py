@@ -96,7 +96,7 @@ def parse(initial,steps):
 	return result
 
 
-def scrape(url,steps,requires_javascript=False):
+def scrape(url,steps,requires_javascript=False,attempts=10):
 	"""Scrapes the given URL with the supplied steps and returns the result.
 
 	:param string url: URL to scrape
@@ -114,13 +114,13 @@ def scrape(url,steps,requires_javascript=False):
 	if requires_javascript:
 		tree = _scrape_selenium(url)
 	else:
-		tree = _scrape_soup(url)
+		tree = _scrape_soup(url,attempts=attempts)
 
 
 	return parse(tree,steps)
 
 
-def scrape_all(base_url,start_page,page_multiplier,steps_elements,steps_content,stop=math.inf,stopif={}):
+def scrape_all(base_url,start_page,page_multiplier,steps_elements,steps_content,stop=math.inf,stopif={},attempts=10):
 	"""Function to scrape a library, gallery or feed that consists of well-patterned elements and return all elements
 	represented by the specified attributes and contents.
 
@@ -131,6 +131,7 @@ def scrape_all(base_url,start_page,page_multiplier,steps_elements,steps_content,
 	:param dict steps_content: For each desired information about each element, a list of steps to reach this information from the element node
 	:param int stop: Limit of elements to scrape
 	:param dict stopif: For any element attribute, a function that evaluates to True if scraping should be stopped
+	:param int attempts: How many times a page visit should be attempted
 	:return: A list of all elements as dictionaries of their attributes
 
 	"""
@@ -150,7 +151,7 @@ def scrape_all(base_url,start_page,page_multiplier,steps_elements,steps_content,
 			url = base_url.format(page=getpage(pagenum))
 
 			#print("Page",pagenum,"URL",url)
-			elements = scrape(url,steps_elements)
+			elements = scrape(url,steps_elements,attempts=attempts)
 			#print(len(elements),"on this page")
 
 			for e in elements:
@@ -179,10 +180,16 @@ def scrape_all(base_url,start_page,page_multiplier,steps_elements,steps_content,
 
 
 
-def _scrape_soup(url):
+def _scrape_soup(url,attempts):
 	br = mechanicalsoup.StatefulBrowser()
-	page = br.open(url)
-	tree = html.fromstring(page.content)
+	for attempt in range(attempts):
+		try:
+			page = br.open(url)
+			tree = html.fromstring(page.content)
+			break
+		except:
+			print("Problem while scraping",url)
+			time.sleep(1 + attempt)
 	return tree
 
 
