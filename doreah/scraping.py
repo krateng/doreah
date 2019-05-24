@@ -1,8 +1,7 @@
 import requests
 import mechanicalsoup
 import json
-from lxml import html, etree
-from lxml.html import tostring
+import lxml
 import math
 import re
 
@@ -65,7 +64,7 @@ def parse(initial,steps):
 			elif steptype == "follow":
 				br = mechanicalsoup.StatefulBrowser()
 				page = br.open(result)
-				result = html.fromstring(page.content)
+				result = lxml.html.fromstring(page.content)
 
 		else:
 			if steptype == "pick":
@@ -185,7 +184,7 @@ def _scrape_soup(url,attempts):
 	for attempt in range(attempts):
 		try:
 			page = br.open(url)
-			tree = html.fromstring(page.content)
+			tree = lxml.html.fromstring(page.content)
 			break
 		except:
 			print("Problem while scraping",url)
@@ -203,7 +202,7 @@ def _scrape_selenium(url):
 
 	dr.get(url)
 	raw = dr.execute_script("return document.documentElement.outerHTML")
-	tree = html.fromstring(raw)
+	tree = lxml.html.fromstring(raw)
 	dr.close()
 	return tree
 

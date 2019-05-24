@@ -20,7 +20,7 @@ class Mock(MagicMock):
 	def __getattr__(cls,name):
 		return MagicMock()
 
-mock_modules = ["lxml"]
+mock_modules = ["lxml","mechanicalsoup"]
 sys.modules.update((modname, Mock()) for modname in mock_modules)
 
 
