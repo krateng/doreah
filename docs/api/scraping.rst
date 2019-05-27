@@ -32,6 +32,8 @@ The following steps are possible:
 * Steps that work for single elements and split them into a list:
 		split
 			splits the string (string -> stringlist)
+		makelist
+			turns an element into a list consisting of that element (string -> stringlist, node -> nodelist)
 		xpathls
 			follows the xpath down the tree, returns all elements (node -> nodelist or stringlist)
 * Steps that work for lists and merge them back into a single element:

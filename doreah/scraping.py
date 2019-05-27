@@ -2,6 +2,7 @@ import requests
 import mechanicalsoup
 import json
 import lxml
+from lxml import html
 import math
 import re
 
@@ -9,13 +10,12 @@ from ._internal import DEFAULT, defaultarguments, doreahconfig
 
 _config = {}
 
-_caches = {}
-
-def config():
+def config(attempts=10):
 	"""Configures default values for this module.
 
 	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
 	global _config
+	_config["attempts"] = attempts
 
 
 config()
@@ -64,7 +64,7 @@ def parse(initial,steps):
 			elif steptype == "follow":
 				br = mechanicalsoup.StatefulBrowser()
 				page = br.open(result)
-				result = lxml.html.fromstring(page.content)
+				result = html.fromstring(page.content)
 
 		else:
 			if steptype == "pick":
@@ -94,8 +94,8 @@ def parse(initial,steps):
 
 	return result
 
-
-def scrape(url,steps,requires_javascript=False,attempts=10):
+@defaultarguments(_config,attempts="attempts")
+def scrape(url,steps,requires_javascript=False,attempts=DEFAULT):
 	"""Scrapes the given URL with the supplied steps and returns the result.
 
 	:param string url: URL to scrape
@@ -103,10 +103,6 @@ def scrape(url,steps,requires_javascript=False,attempts=10):
 	:param bool requires_javascript: Whether the page as it displays in a js-enabled browser should be scraped or merely the source
 	:return: Resulting node or string
 	"""
-	if isinstance(steps,str):
-		with open(steps,"r") as module:
-			text = module.read()
-		instructions = json.loads(text)
 
 	#print("Scraping",url)
 
@@ -119,15 +115,19 @@ def scrape(url,steps,requires_javascript=False,attempts=10):
 	return parse(tree,steps)
 
 
-def scrape_all(base_url,start_page,page_multiplier,steps_elements,steps_content,stop=math.inf,stopif={},attempts=10):
+class _GoodException(Exception):
+	pass
+
+@defaultarguments(_config,attempts="attempts")
+def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplier=1,stop=math.inf,stopif={},attempts=DEFAULT,requires_javascript=False):
 	"""Function to scrape a library, gallery or feed that consists of well-patterned elements and return all elements
 	represented by the specified attributes and contents.
 
 	:param string base_url: The URL part all pages have in common, with {page} as a placeholder for the page
-	:param string/int start_page: The part that must be supplied to the URL to get the first page
-	:param int/func page_multiplier: Either an integer that the page needs to be multiplied with to get the correct URL, or a function that takes the page number as argument
 	:param list steps_elements: Steps from the document node to get a list of all elements to be scraped
 	:param dict steps_content: For each desired information about each element, a list of steps to reach this information from the element node
+	:param string/int start_page: The part that must be supplied to the URL to get the first page
+	:param int/func page_multiplier: Either an integer that the page needs to be multiplied with to get the correct URL, or a function that takes the page number as argument
 	:param int stop: Limit of elements to scrape
 	:param dict stopif: For any element attribute, a function that evaluates to True if scraping should be stopped
 	:param int attempts: How many times a page visit should be attempted
@@ -171,8 +171,10 @@ def scrape_all(base_url,start_page,page_multiplier,steps_elements,steps_content,
 
 			pagenum += 1
 
-	except:
+	except _GoodException:
 		pass
+	except:
+		raise
 
 
 
@@ -184,7 +186,7 @@ def _scrape_soup(url,attempts):
 	for attempt in range(attempts):
 		try:
 			page = br.open(url)
-			tree = lxml.html.fromstring(page.content)
+			tree = html.fromstring(page.content)
 			break
 		except:
 			print("Problem while scraping",url)
@@ -202,7 +204,7 @@ def _scrape_selenium(url):
 
 	dr.get(url)
 	raw = dr.execute_script("return document.documentElement.outerHTML")
-	tree = lxml.html.fromstring(raw)
+	tree = html.fromstring(raw)
 	dr.close()
 	return tree
 
