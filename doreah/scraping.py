@@ -5,6 +5,7 @@ import lxml
 from lxml import html
 import math
 import re
+import time
 
 from ._internal import DEFAULT, defaultarguments, doreahconfig
 
@@ -150,11 +151,11 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 			url = base_url.format(page=getpage(pagenum))
 
 			#print("Page",pagenum,"URL",url)
-			elements = scrape(url,steps_elements,attempts=attempts)
+			elements = scrape(url,steps_elements,attempts=attempts,requires_javascript=requires_javascript)
 			#print(len(elements),"on this page")
 
 			for e in elements:
-				if returned >= stop: raise Exception("Number of elements reached")
+				if returned >= stop: raise _GoodException("Number of elements reached")
 				resultelement = {}
 
 				for attribute in steps_content:
@@ -162,7 +163,7 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 					res = parse(e,steps_content[attribute])
 					#print("Setting attribute",attribute,"to",res)
 					if attribute in stopif and stopif[attribute](res):
-						raise Exception("Break condition reached")
+						raise _GoodException("Break condition reached")
 					resultelement[attribute] = res
 
 				#result.append(resultelement)
