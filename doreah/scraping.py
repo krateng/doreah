@@ -32,10 +32,12 @@ def parse(initial,steps):
 	:returns: The resulting node or string value
 	"""
 
+
 	i = 0
 	result = initial
 	has_split = False
 	for step in steps:
+		#print("Step",step)
 		steptype,instruction = step.get("type"),step.get("instruction")
 		if not has_split:
 			if steptype == "xpath":
@@ -158,19 +160,23 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 				if returned >= stop: raise _GoodException("Number of elements reached")
 				resultelement = {}
 
-				for attribute in steps_content:
-					#print("Attribute",attribute)
-					res = parse(e,steps_content[attribute])
-					#print("Setting attribute",attribute,"to",res)
-					if attribute in stopif and stopif[attribute](res):
-						raise _GoodException("Break condition reached")
-					resultelement[attribute] = res
+				try:
+					for attribute in steps_content:
+						#print("Attribute",attribute)
+						res = parse(e,steps_content[attribute])
+						#print("Setting attribute",attribute,"to",res)
+						if attribute in stopif and stopif[attribute](res):
+							raise _GoodException("Break condition reached")
+						resultelement[attribute] = res
 
-				#result.append(resultelement)
-				yield resultelement
-				returned += 1
+					#result.append(resultelement)
+					yield resultelement
+					returned += 1
+				except:
+					print("Failed to get element, skipping...")
 
 			pagenum += 1
+			if url == base_url.format(page=getpage(pagenum)): break
 
 	except _GoodException:
 		pass
@@ -198,14 +204,21 @@ def _scrape_soup(url,attempts):
 def _scrape_selenium(url):
 	try:
 		from selenium import webdriver
+		import time
 		dr = webdriver.Firefox()
 	except:
 		print("Selenium and the Firefox web driver are needed to scrape sites with javascript")
 		return None
 
 	dr.get(url)
-	raw = dr.execute_script("return document.documentElement.outerHTML")
-	tree = html.fromstring(raw)
+	oldtree = None
+	for x in range(10):
+		dr.execute_script("window.scrollTo(0, 10000);")
+		time.sleep(1)
+		raw = dr.execute_script("return document.documentElement.outerHTML")
+		tree = html.fromstring(raw)
+		if dr.execute_script("(window.innerHeight + window.scrollY) >= document.body.offsetHeight"):
+			break
 	dr.close()
 	return tree
 
