@@ -104,21 +104,27 @@ def _parse_node(node,d,interpret,directory=None):
 
 		if len(node.attrib) == 0:
 			print("Executing code!")
+			#print({k:d[k] for k in d if not k.startswith("_")})
 			code = node.text
 			code = code.strip("\t").strip(" ")
 			code = code.split("\n")
-			if code[0] != "" or code[-1] != "":
-				print("Malformed code block!")
-			code = code[1:-1]
-			roottabs = 0
-			for char in code[0]:
-				if char == "\t" or char == " ":
-					roottabs += 1
-				else:
-					break
+			if len(code) == 1:
+				# one-line code
+				code = code[0]
+			else:
+				# multiline code
+				if code[0] != "" or code[-1] != "":
+					print("Malformed code block!")
+				code = code[1:-1]
+				roottabs = 0
+				for char in code[0]:
+					if char == "\t" or char == " ":
+						roottabs += 1
+					else:
+						break
 
-			code = [line[roottabs:] for line in code]
-			code = "\n".join(code)
+				code = [line[roottabs:] for line in code]
+				code = "\n".join(code)
 
 			exec(code,d)
 
@@ -129,6 +135,7 @@ def _parse_node(node,d,interpret,directory=None):
 		if _attr(node,"save") is not None and _attr(node,"as") is not None:
 			#print("d[" + _attr(node,"as") + "] = " + _attr(node,"save"))
 			d[_attr(node,"as")] = eval(_attr(node,"save"),d)
+			#print({k:d[k] for k in d if not k.startswith("_")})
 
 			return [node.tail]
 
@@ -182,15 +189,20 @@ def _parse_node(node,d,interpret,directory=None):
 					nodestoreturn += [_attr(node,"separator")]
 				first = False
 
+				# the dict needs to remain the same object so changes from one node
+				# in the for loop are carried over into the next loop
+				d.update({_attr(node,"for"):element})
+
 				# now go through the nodes each time
+				# first add the node text
 				nodestoreturn += [node.text]
-
+				# then all the subnodes
 				for sn in node:
-
-					# parse with the normal dict and the current element of the loop
 					sn = deepcopy(sn)
-					nodestoreturn += _parse_node(sn,{**d, **{_attr(node,"for"):element}},interpret,directory=directory)
+					nodestoreturn += _parse_node(sn,d,interpret,directory=directory)
 
+				# clear the variable after each loop
+				del d[_attr(node,"for")]
 
 
 			nodestoreturn += [node.tail]
