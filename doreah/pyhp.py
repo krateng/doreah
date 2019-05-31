@@ -139,6 +139,10 @@ def _parse_node(node,d,interpret,directory=None):
 
 			return [node.tail]
 
+		### IMPORT
+
+		if _attr(node,"import") is not None:
+			exec("import " + _attr(node,"import"),d)
 
 
 		#### INCLUDE
