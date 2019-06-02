@@ -172,8 +172,11 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 					#result.append(resultelement)
 					yield resultelement
 					returned += 1
+				except _GoodException:
+					raise
 				except:
-					print("Failed to get element, skipping...")
+					#print("Failed to get element, skipping...")
+					pass
 
 			pagenum += 1
 			if url == base_url.format(page=getpage(pagenum)): break
@@ -182,6 +185,8 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 		pass
 	except:
 		raise
+
+	return
 
 
 
@@ -194,11 +199,11 @@ def _scrape_soup(url,attempts):
 		try:
 			page = br.open(url)
 			tree = html.fromstring(page.content)
-			break
+			return tree
 		except:
 			print("Problem while scraping",url)
 			time.sleep(1 + attempt)
-	return tree
+
 
 
 def _scrape_selenium(url):
