@@ -205,7 +205,7 @@ def update_settings(file,settings,create_new=False):
 			#print("Found key")
 			newline = origline.split("=",1)
 			#print({"linepart":newline[1],"keytoreplace":val,"new":settings[key]})
-			newline[1] = newline[1].replace(val,str(settings[key]),1)
+			newline[1] = newline[1].replace(val,'"' + settings[key] + '"' if isinstance(settings[key],str) else str(settings[key]),1)
 			newline = "=".join(newline)
 			newlines.append(newline)
 
