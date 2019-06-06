@@ -46,4 +46,29 @@ def doreahconfig(module):
 
 
 
-### change decorator, use default object instead (sentinel) for better documentation
+
+class DoreahConfig:
+
+	def __init__(self,module):
+		self.module = module
+		self.configuration = {}
+
+	def _readfile(self):
+		from .settings import get_settings
+		s = get_settings(files=[".doreah"],prefix=self.module + ".",cut_prefix=True)
+		self.configuration.update(s)
+
+	# set configuration
+	def __call__(self,**kwargs):
+		self.configuration.update(kwargs)
+
+	def _initial(self,**kwargs,ignore_file=False):
+		self(**kwargs) # set initial values
+		if not ignore_file:
+			self._readfile() # overwrite from .doreah file
+
+	def __getitem__(self,key):
+		return self.configuration[key]
+
+	def __repr__(self):
+		return "Configuration for " + self.module + ": " + repr(self.configuration)
