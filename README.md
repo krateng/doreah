@@ -11,3 +11,4 @@ Install with `pip install doreah`.
 
 * [Maloja](https://github.com/krateng/maloja)
 * [Nimrodel](https://github.com/krateng/nimrodel)
+* [AServMR](https://github.com/krateng/aservmr)
