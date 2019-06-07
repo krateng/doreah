@@ -3,6 +3,7 @@ Modules
 
 .. toctree::
    caching
+   io
    logging
    persistence
    pyhp
