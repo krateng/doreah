@@ -62,7 +62,7 @@ class DoreahConfig:
 	def __call__(self,**kwargs):
 		self.configuration.update(kwargs)
 
-	def _initial(self,**kwargs,ignore_file=False):
+	def _initial(self,ignore_file=False,**kwargs):
 		self(**kwargs) # set initial values
 		if not ignore_file:
 			self._readfile() # overwrite from .doreah file
