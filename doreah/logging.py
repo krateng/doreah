@@ -32,17 +32,37 @@ config()
 
 
 
+def _colorcodes(color):
+	if color is None: return "",""
+	names = {
+		"red":(255,0,0),
+		"green":(0,255,0),
+		"blue":(0,0,255)
+	}
+	if color in names:
+		color = names[color]
+	if isinstance(color,str) and color.startswith("#"):
+		color = int(color[1:2],16),int(color[3:4],16),int(color[5:6],16)
 
-def log(*entries,module=None,heading=None,indent=0,importance=0):
+	start = "\033[38;2;" + ";".join(str(c) for c in color) + "m"
+	end = "\033[0m"
+	return start,end
+
+
+def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 	"""Logs all supplied arguments, separate line for each. Only writes to logfile if importance value is lower than the set verbosity value.
 
 	:param string entries: All log entries, one line per entry
 	:param string module: Custom category. Log entry will be prepended by this string in the console and be written to this file on disk. Defaults to actual name of the python module.
 	:param integer heading: Heading category. Headings will be visually distinguished from normal entries.
 	:param integer indent: Indent to be added to entry
-	:param integer importance: Low means important. If this value is higher than the verbosity, entry will not be shown on console."""
+	:param integer importance: Low means important. If this value is higher than the verbosity, entry will not be shown on console.
+	:param string color: Color-codes console output. Can be a hex string, a RGB tuple or the name of a color."""
 
 	now = datetime.datetime.utcnow().strftime(_config["timeformat"])
+
+
+	colorprefix,colorsuffix = _colorcodes(color)
 
 	# log() can be used to add empty line
 	if len(entries) == 0: entries = ("",)
@@ -75,7 +95,7 @@ def log(*entries,module=None,heading=None,indent=0,importance=0):
 		# console output
 		if (importance <= _config["verbosity"]):
 			for msg in entries:
-				print("[" + module + "] " + prefix + msg)
+				print(colorprefix + "[" + module + "] " + prefix + msg + colorsuffix)
 
 		# file output
 		logfilename = _config["logfolder"] + "/" + module + ".log"
