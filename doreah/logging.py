@@ -42,7 +42,7 @@ def _colorcodes(color):
 	if color in names:
 		color = names[color]
 	if isinstance(color,str) and color.startswith("#"):
-		color = int(color[1:2],16),int(color[3:4],16),int(color[5:6],16)
+		color = int(color[1:3],16),int(color[3:5],16),int(color[5:7],16)
 
 	start = "\033[38;2;" + ";".join(str(c) for c in color) + "m"
 	end = "\033[0m"
