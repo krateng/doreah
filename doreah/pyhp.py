@@ -311,12 +311,13 @@ if __name__ == "__main__":
 
 	@get("/<path:path>")
 	def serve_file(path):
-
-		if os.path.exists(path):
-			return static_file(path)
-		if os.path.exists(path + ".html"):
-			return static_file(path + ".html")
-		elif os.path.exists(path + ".pyhp"):
+		
+		if os.path.exists(path + ".pyhp"):
 			return file(path + ".pyhp")
+		if os.path.exists(path):
+			return static_file(path,root="")
+		if os.path.exists(path + ".html"):
+			return static_file(path + ".html",root="")
+
 
 	run(host="::",port=1337)
