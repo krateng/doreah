@@ -8,6 +8,7 @@ import pickle
 from ._internal import DEFAULT, defaultarguments, doreahconfig
 from .persistence import save, load, delete, size
 from .regular import repeathourly
+from .logging import log
 
 _config = {}
 
@@ -168,12 +169,14 @@ class Cache:
 
 	@repeathourly
 	def _maintenance(self):
+		log("Hourly maintenance",module="debug")
 		if self.changed:
 			if len(self.cache) > self.maxsize or self._size() > self.maxmemory:
 				#flush anyway expired entries
 				self.flush()
 
 			while len(self.cache) > self.maxsize or self._size() > self.maxmemory:
+				log("Expiring oldest entry",module="debug")
 				#expire oldest entry
 				keys = list(self.times.keys())
 				keys.sort(key=lambda k:self.times[k])

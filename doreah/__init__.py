@@ -1,5 +1,5 @@
 name = "doreah"
-version = 0,10,3
+version = 0,10,4
 versionstr = ".".join(str(n) for n in version)
 author = {
 	"name": "Johannes Krattenmacher",
@@ -15,6 +15,7 @@ requires = [
 
 __all__ = [
 	"caching",
+	"io",
 	"logging",
 	"persistence",
 	"pyhp",
