@@ -2,6 +2,7 @@ from threading import Thread, Timer
 import datetime
 
 from ._internal import DEFAULT, defaultarguments, gopen, doreahconfig
+from .logging import log
 
 
 _config = {}
