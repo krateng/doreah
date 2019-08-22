@@ -198,6 +198,7 @@ def repeathourly(func):
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
+		log("Starting function " + str(func) + " for first time",module="debug")
 		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
 		t.daemon = True
 		t.start()

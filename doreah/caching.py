@@ -169,7 +169,7 @@ class Cache:
 
 	@repeathourly
 	def _maintenance(self):
-		log("Hourly maintenance",module="debug")
+		log("Hourly maintenance of " + str(self),module="debug")
 		if self.changed:
 			if len(self.cache) > self.maxsize or self._size() > self.maxmemory:
 				#flush anyway expired entries
