@@ -2,7 +2,6 @@ from threading import Thread, Timer
 import datetime
 
 from ._internal import DEFAULT, defaultarguments, gopen, doreahconfig
-from .logging import log
 
 
 _config = {}
@@ -199,7 +198,6 @@ def repeathourly(func):
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
-		log("Starting function " + str(func) + " for first time",module="debug")
 		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
 		t.daemon = True
 		t.start()
