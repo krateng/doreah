@@ -6,9 +6,3 @@ Install with `pip install doreah`.
 
 
 [Documentation](https://doreah.readthedocs.io)
-
-## Used by
-
-* [Maloja](https://github.com/krateng/maloja)
-* [Nimrodel](https://github.com/krateng/nimrodel)
-* [AServMR](https://github.com/krateng/aservmr)
