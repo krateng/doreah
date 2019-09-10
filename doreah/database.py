@@ -59,7 +59,11 @@ class Database:
 				def init(self,types=types,force_uid=None,**vars):
 					for v in vars:
 						# set attributes according to keyword arguments
-						assert isinstance(vars[v],types[v])
+						try:
+							assert isinstance(vars[v],types[v])
+						except:
+							print("Wrong data type!",v,"should be",types[v],"not",type(vars[v]))
+							raise
 						setattr(self,v,vars[v])
 
 					# set defaults
@@ -197,7 +201,7 @@ class Database:
 
 
 def yamlify(obj):
-	if type(obj) in [str,int]: return obj
+	if type(obj) in [str,int,float]: return obj
 	if obj == [] or obj == {}: return obj
 
 	try:
