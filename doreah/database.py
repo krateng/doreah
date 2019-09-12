@@ -126,7 +126,7 @@ class Database:
 				# create constructor
 
 				def init(self,types=types,force_uid=None,**vars):
-					if hasattr(self,"uid"): return # if we have an existing class, don't do any init
+					alreadyexisting = hasattr(self,"uid") # if we have an existing class, don't do all of the init
 					for v in vars:
 						# set attributes according to keyword arguments
 						try:
@@ -136,20 +136,23 @@ class Database:
 							raise
 						setattr(self,v,vars[v])
 
-					# set defaults
-					for v in types:
-						if v not in vars:
-							setattr(self,v,types[v]()) # can just call type to get a version of it, e.g. list() -> []
 
-					# register object with Database
-					self.uid = force_uid if force_uid is not None else \
-						max(self_db.id_to_object) + 1 if len(self_db.id_to_object) > 0 else 0
-					self_db.id_to_object[self.uid] = self
-					self_db.class_to_objects[cls].append(self)
 
-					if len(cls.__primarykey__) > 0:
-						primkey = tuple(tuplify(vars[v]) for v in cls.__primarykey__)
-						self_db.class_primary_keys[cls][primkey] = self
+					if not alreadyexisting:
+						# set defaults
+						for v in types:
+							if v not in vars:
+								setattr(self,v,types[v]()) # can just call type to get a version of it, e.g. list() -> []
+
+						# register object with Database
+						self.uid = force_uid if force_uid is not None else \
+							max(self_db.id_to_object) + 1 if len(self_db.id_to_object) > 0 else 0
+						self_db.id_to_object[self.uid] = self
+						self_db.class_to_objects[cls].append(self)
+
+						if len(cls.__primarykey__) > 0:
+							primkey = tuple(tuplify(vars[v]) for v in cls.__primarykey__)
+							self_db.class_primary_keys[cls][primkey] = self
 
 				cls.__init__ = init
 
