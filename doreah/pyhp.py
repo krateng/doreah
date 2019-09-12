@@ -103,7 +103,7 @@ def _parse_node(node,d,interpret,directory=None):
 		### CODE
 
 		if len(node.attrib) == 0:
-			print("Executing code!")
+			#print("Executing code!")
 			#print({k:d[k] for k in d if not k.startswith("_")})
 			code = node.text
 			code = code.strip("\t").strip(" ")
@@ -311,7 +311,7 @@ if __name__ == "__main__":
 
 	@get("/<path:path>")
 	def serve_file(path):
-		
+
 		if os.path.exists(path + ".pyhp"):
 			return file(path + ".pyhp")
 		if os.path.exists(path):

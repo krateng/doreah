@@ -18,6 +18,9 @@ class Ref:
 class MultiRef(Ref):
 	pass
 
+class Primary:
+	pass
+
 class Database:
 
 	def getall(self,cls):
@@ -26,12 +29,25 @@ class Database:
 	def get(self,id):
 		return self.id_to_object[id]
 
+	def getby(self,cls,**keys):
+
+		tup = tuple(tuplify(keys[k]) for k in cls.__primarykey__)
+		return self.class_primary_keys[cls][tup]
+
+	def getby_or_create(self,cls,**keys):
+
+		try:
+			return self.getby(cls,**keys)
+		except:
+			return cls(**keys)
+
 	def __init__(self_db,file="database.ddb"):
 		print("Initializing database...")
 		self_db.file = file
 
 		self_db.id_to_object = {}
 		self_db.class_to_objects = {}
+		self_db.class_primary_keys = {}
 
 		self_db.loadarea = {}
 		self_db.load()
@@ -52,33 +68,12 @@ class Database:
 			def __init_subclass__(cls):
 				# register class
 				self_db.class_to_objects[cls] = []
+				self_db.class_primary_keys[cls] = {}
+				cls.__primarykey__ = tuple()
 				print("New database class defined:",cls)
 
-				# create constructor
+
 				types = cls.__annotations__
-				def init(self,types=types,force_uid=None,**vars):
-					for v in vars:
-						# set attributes according to keyword arguments
-						try:
-							assert isinstance(vars[v],types[v])
-						except:
-							print("Wrong data type!",v,"should be",types[v],"not",type(vars[v]))
-							raise
-						setattr(self,v,vars[v])
-
-					# set defaults
-					for v in types:
-						if v not in vars:
-							setattr(self,v,types[v]()) # can just call type to get a version of it, e.g. list() -> []
-
-					# register object with Database
-					self.uid = force_uid if force_uid is not None else \
-						max(self_db.id_to_object) + 1 if len(self_db.id_to_object) > 0 else 0
-					self_db.id_to_object[self.uid] = self
-					self_db.class_to_objects[cls].append(self)
-
-				cls.__init__ = init
-
 
 
 				# add to referenced classes
@@ -120,8 +115,61 @@ class Database:
 
 							setattr(classvar.cls,classvar.backref,prop)
 
+					#	# save what defines our primary key (in addition to uid)
+					#	elif isinstance(classvar,Primary):
+					#		cls.__primarykey__.append(v)
 
-				# after every class is defined, check if we can create new objects
+				#cls.__primarykey__ = tuple(cls.__primarykey__)
+				if hasattr(cls,"__primary__"): cls.__primarykey__ = tuple(cls.__primary__)
+
+
+				# create constructor
+
+				def init(self,types=types,force_uid=None,**vars):
+					if hasattr(self,"uid"): return # if we have an existing class, don't do any init
+					for v in vars:
+						# set attributes according to keyword arguments
+						try:
+							assert isinstance(vars[v],types[v])
+						except:
+							print("Wrong data type!",v,"should be",types[v],"not",type(vars[v]))
+							raise
+						setattr(self,v,vars[v])
+
+					# set defaults
+					for v in types:
+						if v not in vars:
+							setattr(self,v,types[v]()) # can just call type to get a version of it, e.g. list() -> []
+
+					# register object with Database
+					self.uid = force_uid if force_uid is not None else \
+						max(self_db.id_to_object) + 1 if len(self_db.id_to_object) > 0 else 0
+					self_db.id_to_object[self.uid] = self
+					self_db.class_to_objects[cls].append(self)
+
+					if len(cls.__primarykey__) > 0:
+						primkey = tuple(tuplify(vars[v]) for v in cls.__primarykey__)
+						self_db.class_primary_keys[cls][primkey] = self
+
+				cls.__init__ = init
+
+
+				# create creator (if primary keys match, no new object is created!)
+				# we cant programmatically assign a metaclass, so we can't avoid __init__
+				# being called
+				def new(cls,**kwargs):
+
+					try:
+						return self_db.getby(cls,**kwargs)
+					except Exception as e:
+						inst = object.__new__(cls)
+						return inst
+
+				cls.__new__ = new
+
+
+
+				# after each class is defined, check if we can create new objects
 				self_db.inject()
 
 		self_db.DBObject = obj
@@ -211,6 +259,17 @@ def yamlify(obj):
 
 	try:
 		return [yamlify(e) for e in obj]
+	except:
+		pass
+
+	return obj.uid
+
+
+def tuplify(obj):
+	if type(obj) in [str,int,float]: return obj
+
+	try:
+		return frozenset(tuplify(e) for e in obj)
 	except:
 		pass
 
