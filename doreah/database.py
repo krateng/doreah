@@ -33,7 +33,7 @@ class Database:
 	def getby(self,cls,**keys):
 		if isinstance(cls,str): cls = [c for c in self.class_to_objects if c.__name__ == cls][0]
 
-		tup = tuple(tuplify(keys[k]) for k in cls.__primarykey__)
+		tup = tuple(tuplify(keys[k],ignore_capitalization=self.rules["ignore_capitalization"]) for k in cls.__primarykey__)
 		return self.class_primary_keys[cls][tup]
 
 	def getby_or_create(self,cls,**keys):
@@ -44,9 +44,29 @@ class Database:
 		except:
 			return cls(**keys)
 
-	def __init__(self_db,file="database.ddb"):
+	def delete(self,inp):
+		# can take uid or reference
+		if isinstance(inp,int):
+			uid = inp
+			obj = self.id_to_object[uid]
+		else:
+			uid = inp.uid
+			obj = inp
+
+		cls = obj.__class__
+
+		del self.id_to_object[uid]
+		self.class_to_objects[cls].remove(obj)
+		primkey = tuple(tuplify(obj.__getattribute__(v),ignore_capitalization=self.rules["ignore_capitalization"]) for v in cls.__primarykey__)
+		del self.class_primary_keys[cls][primkey]
+
+	def __init__(self_db,file="database.ddb",ignore_capitalization=False):
 		print("Initializing database...")
 		self_db.file = file
+
+		self_db.rules = {
+			"ignore_capitalization":ignore_capitalization
+		}
 
 		self_db.id_to_object = {}
 		self_db.class_to_objects = {}
@@ -131,6 +151,7 @@ class Database:
 				def init(self,types=types,force_uid=None,**vars):
 					alreadyexisting = hasattr(self,"uid") # if we have an existing class, don't do all of the init
 					for v in vars:
+						if vars[v] is None: continue
 						# set attributes according to keyword arguments
 						try:
 							assert isinstance(vars[v],types[v])
@@ -144,7 +165,7 @@ class Database:
 					if not alreadyexisting:
 						# set defaults
 						for v in types:
-							if v not in vars:
+							if v not in vars or vars[v] is None:
 								setattr(self,v,types[v]()) # can just call type to get a version of it, e.g. list() -> []
 
 						# register object with Database
@@ -154,7 +175,7 @@ class Database:
 						self_db.class_to_objects[cls].append(self)
 
 						if len(cls.__primarykey__) > 0:
-							primkey = tuple(tuplify(vars[v]) for v in cls.__primarykey__)
+							primkey = tuple(tuplify(vars[v],ignore_capitalization=self_db.rules["ignore_capitalization"]) for v in cls.__primarykey__)
 							self_db.class_primary_keys[cls][primkey] = self
 
 				cls.__init__ = init
@@ -271,8 +292,10 @@ def yamlify(obj):
 	return obj.uid
 
 
-def tuplify(obj):
+def tuplify(obj,ignore_capitalization=False):
+	if type(obj) is str and ignore_capitalization: return obj.lower()
 	if type(obj) in [str,int,float]: return obj
+	if obj is None: return None
 
 	try:
 		return frozenset(tuplify(e) for e in obj)

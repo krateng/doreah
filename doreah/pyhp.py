@@ -193,6 +193,13 @@ def _parse_node(node,d,interpret,directory=None):
 					nodestoreturn += [_attr(node,"separator")]
 				first = False
 
+				# in case we overload a dict entry, keep the old one
+				sentinel = object()
+				if _attr(node,"for") in d:
+					hide = d[_attr(node,"for")]
+				else:
+					hide = sentinel
+
 				# the dict needs to remain the same object so changes from one node
 				# in the for loop are carried over into the next loop
 				d.update({_attr(node,"for"):element})
@@ -207,6 +214,8 @@ def _parse_node(node,d,interpret,directory=None):
 
 				# clear the variable after each loop
 				del d[_attr(node,"for")]
+				if hide is not sentinel:
+					d[_attr(node,"for")] = hide
 
 
 			nodestoreturn += [node.tail]
