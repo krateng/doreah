@@ -2,33 +2,23 @@ import datetime
 import inspect
 import os
 
-from ._internal import defaultarguments, gopen, doreahconfig
+from ._internal import defaultarguments, gopen, DoreahConfig
 
-_config = {}
 
 _queue = []
 _locked = False
 
-# set configuration
+
 # logfolder			folder to store logfiles in
 # timeformat		strftime format for log files
 # defaultmodule		name for the main running script
 # verbosity			higher means more (less important) messages are shown on console
-def config(logfolder="logs",timeformat="%Y/%m/%d %H:%M:%S",defaultmodule="main",verbosity=0):
-	"""Configures default values for this module.
-
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["logfolder"] = logfolder
-	_config["timeformat"] = timeformat
-	_config["defaultmodule"] = defaultmodule
-	_config["verbosity"] = verbosity
-
-
-# initial config on import, set everything to default
-config()
-
-
+config = DoreahConfig("logging",
+	logfolder="logs",
+	timeformat="%Y/%m/%d %H:%M:%S",
+	defaultmodule="main",
+	verbosity=0
+)
 
 
 
@@ -59,7 +49,7 @@ def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 	:param integer importance: Low means important. If this value is higher than the verbosity, entry will not be shown on console.
 	:param string color: Color-codes console output. Can be a hex string, a RGB tuple or the name of a color."""
 
-	now = datetime.datetime.utcnow().strftime(_config["timeformat"])
+	now = datetime.datetime.utcnow().strftime(config["timeformat"])
 
 
 	colorprefix,colorsuffix = _colorcodes(color)
@@ -83,22 +73,22 @@ def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 	if module is None:
 		try:
 			module = inspect.getmodule(inspect.stack()[1][0]).__name__
-			if module == "__main__": module = _config["defaultmodule"]
+			if module == "__main__": module = config["defaultmodule"]
 		except:
 			module = "interpreter"
 
 	global _locked, _queue
 	if _locked:
 		for msg in entries:
-			_queue.append({"time":now,"prefix":prefix,"msg":msg,"module":module,"console":(importance <= _config["verbosity"])})
+			_queue.append({"time":now,"prefix":prefix,"msg":msg,"module":module,"console":(importance <= config["verbosity"])})
 	else:
 		# console output
-		if (importance <= _config["verbosity"]):
+		if (importance <= config["verbosity"]):
 			for msg in entries:
 				print(colorprefix + "[" + module + "] " + prefix + msg + colorsuffix)
 
 		# file output
-		logfilename = _config["logfolder"] + "/" + module + ".log"
+		logfilename = config["logfolder"] + "/" + module + ".log"
 		#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
 		with gopen(logfilename,"a") as logfile:
 			for msg in entries:
@@ -114,7 +104,7 @@ def flush():
 			print("[" + entry["module"] + "] " + entry["prefix"] + entry["msg"])
 
 		# file output
-		logfilename = _config["logfolder"] + "/" + entry["module"] + ".log"
+		logfilename = config["logfolder"] + "/" + entry["module"] + ".log"
 		#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
 		with gopen(logfilename,"a") as logfile:
 			logfile.write(entry["time"] + "  " + entry["prefix"] + entry["msg"] + "\n")
@@ -128,9 +118,3 @@ def logh1(*args,**kwargs):
 def logh2(*args,**kwargs):
 	"""Logs a second-level header. Otherwise, same arguments as :func:`log`"""
 	return log(*args,**kwargs,header=2)
-
-
-
-
-# now check local configuration file
-_config.update(doreahconfig("logging"))

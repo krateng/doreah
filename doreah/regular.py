@@ -1,45 +1,36 @@
 from threading import Thread, Timer
 import datetime
 
-from ._internal import DEFAULT, defaultarguments, gopen, doreahconfig
-
-
-_config = {}
+from ._internal import DEFAULT, defaultarguments, gopen, DoreahConfig
 
 _yearly_funcs = []
 _monthly_funcs = []
 _daily_funcs = []
 
-# set configuration
-def config(autostart=True):
-	"""Configures default values for this module.
 
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["autostart"] = autostart
-
-# initial config on import, set everything to default
-config()
+config = DoreahConfig("regular",
+	autostart=True
+)
 
 
 def yearly(func):
 	"""Decorator for yearly functions. Depending on configuration, is equivalent to either :meth:`runyearly` or :meth:`repeatyearly`."""
-	if _config["autostart"]: return runyearly(func)
+	if config["autostart"]: return runyearly(func)
 	else: return repeatyearly(func)
 
 def monthly(func):
 	"""Decorator for monthly functions. Depending on configuration, is equivalent to either :meth:`runmonthly` or :meth:`repeatmonthly`."""
-	if _config["autostart"]: return runmonthly(func)
+	if config["autostart"]: return runmonthly(func)
 	else: return repeatmonthly(func)
 
 def daily(func):
 	"""Decorator for daily functions. Depending on configuration, is equivalent to either :meth:`rundaily` or :meth:`repeatdaily`."""
-	if _config["autostart"]: return rundaily(func)
+	if config["autostart"]: return rundaily(func)
 	else: return repeatdaily(func)
 
 def hourly(func):
 	"""Decorator for hourly functions. Depending on configuration, is equivalent to either :meth:`runhourly` or :meth:`repeathourly`."""
-	if _config["autostart"]: return runhourly(func)
+	if config["autostart"]: return runhourly(func)
 	else: return repeathourly(func)
 
 
@@ -240,7 +231,3 @@ def _repeatoften(func):
 		t.daemon = True
 		t.start()
 	return starter
-
-
-# now check local configuration file
-_config.update(doreahconfig("regular"))

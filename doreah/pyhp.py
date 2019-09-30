@@ -3,27 +3,18 @@ from copy import deepcopy
 import re
 import os
 
-from ._internal import DEFAULT, defaultarguments, doreahconfig
-
-_config = {}
+from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
 
-# set configuration
-def config(interpret=str):
-	"""Configures default values for this module.
-
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["interpret"] = interpret
-
-# initial config on import, set everything to default
-config()
+config = DoreahConfig("pyhp",
+	interpret=str
+)
 
 
 
 
 
-@defaultarguments(_config,interpret="interpret")
+@defaultarguments(config,interpret="interpret")
 def file(path,d={},interpret=DEFAULT,noroot=False):
 	"""Parses a pyhp source file and returns the generated html code.
 
@@ -51,7 +42,7 @@ def _file(path,d,interpret=DEFAULT,noroot=False):
 	return _parse(content,d,interpret=interpret,directory=directory,noroot=noroot)
 
 
-@defaultarguments(_config,interpret="interpret")
+@defaultarguments(config,interpret="interpret")
 def parse(src,d={},interpret=DEFAULT,directory=None,noroot=False):
 	"""Parses pyhp source and returns the generated html code.
 
@@ -301,11 +292,6 @@ def _attr(node,name):
 		return res.replace(" gr "," > ").replace(" ls "," < ")
 	except:
 		return res
-
-
-
-# now check local configuration file
-_config.update(doreahconfig("pyhp"))
 
 
 

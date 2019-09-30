@@ -4,25 +4,16 @@ import math
 import zlib
 import random
 
-from ._internal import DEFAULT, defaultarguments, gopen, doreahconfig
+from ._internal import DEFAULT, defaultarguments, gopen, DoreahConfig
 
-_config = {}
 
-# set configuration
 # folder	folder to store log files
-def config(folder="storage"):
-	"""Configures default values for this module.
-
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["folder"] = folder
+config = DoreahConfig("persistence",
+	folder="storage"
+)
 
 
-# initial config on import, set everything to default
-config()
-
-
-@defaultarguments(_config,folder="folder")
+@defaultarguments(config,folder="folder")
 def save(data,name,folder=DEFAULT):
 	"""Saves the supplied data structure to disk.
 
@@ -39,7 +30,7 @@ def save(data,name,folder=DEFAULT):
 	except:
 		pass
 
-@defaultarguments(_config,folder="folder")
+@defaultarguments(config,folder="folder")
 def load(name,folder=DEFAULT):
 	"""Loads a data structure from disk.
 
@@ -56,7 +47,7 @@ def load(name,folder=DEFAULT):
 
 	return ob
 
-@defaultarguments(_config,folder="folder")
+@defaultarguments(config,folder="folder")
 def delete(name,folder=DEFAULT):
 	"""Deletes a serialized data structure from disk.
 
@@ -69,7 +60,7 @@ def delete(name,folder=DEFAULT):
 	except:
 		pass
 
-@defaultarguments(_config,folder="folder")
+@defaultarguments(config,folder="folder")
 def size(name,folder=DEFAULT):
 	"""Returns the size of a serialized object.
 
@@ -113,7 +104,7 @@ class DiskDict:
 	:param string name: Directory name used for storage
 	:param string folder: Parent directory"""
 
-	@defaultarguments(_config,folder="folder")
+	@defaultarguments(config,folder="folder")
 	def __init__(self,maxmemory=math.inf,maxstorage=1024*1024*1024*4,name="diskdict",folder=DEFAULT):
 
 		self.maxmemory = maxmemory
@@ -190,9 +181,3 @@ class DiskDict:
 
 		name = str(random.uniform(1000000000,9999999999)).replace(".","")
 		save((key,value),os.path.join(self.name,hashvalue,name),folder=self.folder)
-
-
-
-
-# now check local configuration file
-_config.update(doreahconfig("persistence"))

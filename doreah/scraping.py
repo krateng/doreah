@@ -7,19 +7,11 @@ import math
 import re
 import time
 
-from ._internal import DEFAULT, defaultarguments, doreahconfig
+from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
-_config = {}
-
-def config(attempts=10):
-	"""Configures default values for this module.
-
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["attempts"] = attempts
-
-
-config()
+config = DoreahConfig("scraping",
+	attempts=10
+)
 
 
 
@@ -97,7 +89,7 @@ def parse(initial,steps):
 
 	return result
 
-@defaultarguments(_config,attempts="attempts")
+@defaultarguments(config,attempts="attempts")
 def scrape(url,steps,requires_javascript=False,attempts=DEFAULT):
 	"""Scrapes the given URL with the supplied steps and returns the result.
 
@@ -121,7 +113,7 @@ def scrape(url,steps,requires_javascript=False,attempts=DEFAULT):
 class _GoodException(Exception):
 	pass
 
-@defaultarguments(_config,attempts="attempts")
+@defaultarguments(config,attempts="attempts")
 def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplier=1,stop=math.inf,stopif={},attempts=DEFAULT,requires_javascript=False):
 	"""Function to scrape a library, gallery or feed that consists of well-patterned elements and return all elements
 	represented by the specified attributes and contents.
@@ -226,29 +218,3 @@ def _scrape_selenium(url):
 			break
 	dr.close()
 	return tree
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# now check local configuration file
-_config.update(doreahconfig("scraping"))

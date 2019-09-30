@@ -5,7 +5,6 @@ import yaml
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
 config = DoreahConfig("database")
-config._initial()
 
 
 

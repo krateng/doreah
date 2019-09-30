@@ -1,8 +1,10 @@
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
 
-config = DoreahConfig("io")
-config._initial(yesvalues=["y","yes","yea","1","positive","true"],novalues=["n","no","nay","0","negative","false"])
+config = DoreahConfig("io",
+	yesvalues=["y","yes","yea","1","positive","true"],
+	novalues=["n","no","nay","0","negative","false"]
+)
 
 
 

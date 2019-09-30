@@ -1,23 +1,14 @@
 import time
 
-from ._internal import defaultarguments, doreahconfig
-
-_config = {}
+from ._internal import defaultarguments, DoreahConfig
 
 _lastcalls = {}
 
-# set configuration
+
 # si		0 means seconds, 1 ms, 2 μs, 3 ns etc
-def config(si=0):
-	"""Configures default values for this module.
-
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["si"] = si
-
-
-# initial config on import, set everything to default
-config()
+config = DoreahConfig("timing",
+	si=0
+)
 
 
 # Take clock. Returns time passed since last call of this function. if called with an identifier, will only
@@ -38,7 +29,7 @@ def clock(*identifiers):
 	now = time.time()
 	# get last calls
 	stamps = (_lastcalls.get(i) for i in identifiers)
-	results = tuple(None if lc is None else (now - lc) * (1000**_config["si"]) for lc in stamps)
+	results = tuple(None if lc is None else (now - lc) * (1000**config["si"]) for lc in stamps)
 	if len(results) == 1: results = results[0]
 
 	# set new stamps
@@ -57,11 +48,3 @@ def clockp(name,*identifiers):
 	:param string identifiers: Unique identifiers for timing to be taken"""
 	time = clock(*identifiers)
 	print(name + ": " + str(time))
-
-
-
-
-
-
-# now check local configuration file
-_config.update(doreahconfig("timing"))

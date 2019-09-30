@@ -5,33 +5,23 @@ import os
 import sys
 import pickle
 
-from ._internal import DEFAULT, defaultarguments, doreahconfig
+from ._internal import DEFAULT, defaultarguments, DoreahConfig
 from .persistence import save, load, delete, size
 from .regular import repeathourly
 from .logging import log
 
-_config = {}
 
 _caches = {}
 
-def config(maxsize=math.inf,maxmemory=math.inf,maxstorage=16*1024*1024*1024,maxage=60*60*24*1,maxage_negative=60*60*24*1,lazy_refresh=True,folder="cache"):
-	"""Configures default values for this module.
-
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["maxsize"] = maxsize
-	_config["maxmemory"] = maxmemory
-	_config["maxstorage"] = maxstorage
-	_config["maxage"] = maxage
-	_config["maxage_negative"] = maxage_negative
-	_config["folder"] = folder
-	if _config["maxsize"] is None: _config["maxsize"] = math.inf
-	if _config["maxage"] is None: _config["maxage"] = math.inf
-	if _config["maxage_negative"] is None: _config["maxage_negative"] = math.inf
-	_config["lazy_refresh"] = lazy_refresh
-
-
-config()
+config = DoreahConfig("caching",
+	maxsize=math.inf,
+	maxmemory=math.inf,
+	maxstorage=16*1024*1024*1024,
+	maxage=60*60*24*1,
+	maxage_negative=60*60*24*1,
+	lazy_refresh=True,
+	folder="cache"
+)
 
 
 class Cache:
@@ -44,7 +34,7 @@ class Cache:
 	:param boolean persistent: Whether this cache should be persistent through program restarts
 	:param string name: If persistent, this is the filename used"""
 
-	@defaultarguments(_config,maxsize="maxsize",maxmemory="maxmemory",maxage="maxage",maxage_negative="maxage_negative")
+	@defaultarguments(config,maxsize="maxsize",maxmemory="maxmemory",maxage="maxage",maxage_negative="maxage_negative")
 	def __init__(self,maxsize=DEFAULT,maxmemory=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT,persistent=False,name=None):
 
 		self.maxsize = maxsize
@@ -55,7 +45,7 @@ class Cache:
 		if self.persistent:
 			self.name = name
 			try:
-				obj = load(name,folder=_config["folder"])
+				obj = load(name,folder=config["folder"])
 				if obj is not None:
 					self.cache,self.times = obj
 					self.changed = False
@@ -79,7 +69,7 @@ class Cache:
 #		:param kwargs: Standard arguments of :class:`Cache` object creation
 #		:return: Newly created object"""
 #
-#		obj = load(name,folder=_config["folder"])
+#		obj = load(name,folder=config["folder"])
 #		if obj is not None: return obj
 #
 #		obj = Cache(**kwargs,persistent=True,name=name)
@@ -184,7 +174,7 @@ class Cache:
 				del self.times[delkey]
 
 			if self.persistent:
-				save((self.cache,self.times),self.name,folder=_config["folder"])
+				save((self.cache,self.times),self.name,folder=config["folder"])
 
 			self.changed = False
 
@@ -208,7 +198,7 @@ class DeepCache(Cache):
 	:param integer maxage_negative: Time in seconds entries with the ``None`` value are valid. This is useful for negative caching.
 	:param string name: Directory name used for storage"""
 
-	@defaultarguments(_config,maxmemory="maxmemory",maxstorage="maxstorage",maxage="maxage",maxage_negative="maxage_negative")
+	@defaultarguments(config,maxmemory="maxmemory",maxstorage="maxstorage",maxage="maxage",maxage_negative="maxage_negative")
 	def __init__(self,maxmemory=DEFAULT,maxage=DEFAULT,maxstorage=DEFAULT,maxage_negative=DEFAULT,name="deepcache"):
 
 		self.maxmemory = maxmemory
@@ -219,7 +209,7 @@ class DeepCache(Cache):
 		self.name = name
 
 		try:
-			obj = load(self._file(),folder=_config["folder"])
+			obj = load(self._file(),folder=config["folder"])
 			self.cache,self.times,self.counter = obj
 			self.changed = False
 		except:
@@ -243,7 +233,7 @@ class DeepCache(Cache):
 
 		value = self.cache[key]
 		if isinstance(value,_DiskReference):
-			value = load(self._file(value.filename),folder=_config["folder"])
+			value = load(self._file(value.filename),folder=config["folder"])
 		if allow_expired: return value
 
 		now_stamp = int(datetime.datetime.utcnow().timestamp())
@@ -264,7 +254,7 @@ class DeepCache(Cache):
 
 		# remove old file
 		if key in self.cache and isinstance(self.cache[key],_DiskReference):
-			delete(self._file(self.cache[key].filename),folder=_config["folder"])
+			delete(self._file(self.cache[key].filename),folder=config["folder"])
 
 		self.cache[key] = value
 		self.times[key] = int(datetime.datetime.utcnow().timestamp())
@@ -281,11 +271,11 @@ class DeepCache(Cache):
 			cache_stamp = self.times.get(key)
 
 			if value is None and (now_stamp - cache_stamp) > self.maxage_negative:
-				if isinstance(self.cache[key],_DiskReference): delete(self._file(self.cache[key].filename),folder=_config["folder"])
+				if isinstance(self.cache[key],_DiskReference): delete(self._file(self.cache[key].filename),folder=config["folder"])
 				del self.cache[key]
 				del self.times[key]
 			if value is not None and (now_stamp - cache_stamp) > self.maxage:
-				if isinstance(self.cache[key],_DiskReference): delete(self._file(self.cache[key].filename),folder=_config["folder"])
+				if isinstance(self.cache[key],_DiskReference): delete(self._file(self.cache[key].filename),folder=config["folder"])
 				del self.cache[key]
 				del self.times[key]
 
@@ -322,14 +312,14 @@ class DeepCache(Cache):
 				try:
 					delkey = keys[0]
 					print("Deleting " + delkey)
-					delete(self._file(self.cache[delkey].filename),folder=_config["folder"])
+					delete(self._file(self.cache[delkey].filename),folder=config["folder"])
 					del self.cache[delkey]
 					del self.times[delkey]
 				except:
 					break
 
 
-			save((self.cache,self.times,self.counter),self._file(),folder=_config["folder"])
+			save((self.cache,self.times,self.counter),self._file(),folder=config["folder"])
 
 			self.changed = False
 
@@ -338,26 +328,26 @@ class DeepCache(Cache):
 		self.counter += 1
 		value = self.cache[key]
 		filename = str(self.counter)
-		save(value,self._file(filename),folder=_config["folder"])
+		save(value,self._file(filename),folder=config["folder"])
 		self.cache[key] = _DiskReference(filename)
 
 	def _disktomemory(self,key):
 		print("Moving " + key + " from disk to memory")
 		filename = self.cache[key].filename
-		value = load("./" + self.name + "/" + filename,folder=_config["folder"])
+		value = load("./" + self.name + "/" + filename,folder=config["folder"])
 		self.cache[key] = value
-		delete(self._file(filename),folder=_config["folder"])
+		delete(self._file(filename),folder=config["folder"])
 
 
 	def _size(self):
 		return sys.getsizeof(pickle.dumps([self.cache[key] for key in self.cache if not isinstance(self.cache[key],_DiskReference)]))
 
 	def _disksize(self):
-		#return sum(os.path.getsize("./" + _config["folder"] + "/" + self.name + "/" + f) for f in os.listdir("./" + _config["folder"] + "/" + self.name))
+		#return sum(os.path.getsize("./" + config["folder"] + "/" + self.name + "/" + f) for f in os.listdir("./" + config["folder"] + "/" + self.name))
 		sumsize = 0
 		for key in self.cache:
 			if isinstance(self.cache[key],_DiskReference):
-				sumsize += size(self._file(self.cache[key].filename),folder=_config["folder"])
+				sumsize += size(self._file(self.cache[key].filename),folder=config["folder"])
 		return sumsize
 
 	# gets a relative filename for keys of this deepcache object
@@ -367,7 +357,7 @@ class DeepCache(Cache):
 
 
 # decorator
-@defaultarguments(_config,maxsize="maxsize",maxage="maxage",maxage_negative="maxage_negative",lazy_refresh="lazy_refresh")
+@defaultarguments(config,maxsize="maxsize",maxage="maxage",maxage_negative="maxage_negative",lazy_refresh="lazy_refresh")
 def cached(maxsize=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT,lazy_refresh=DEFAULT):
 	"""Method decorator to add a proxy cache to a function without keyword arguments.
 
@@ -416,8 +406,3 @@ def cached(maxsize=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT,lazy_refresh=D
 			return newfunc
 
 	return cacheddecorator
-
-
-
-# now check local configuration file
-_config.update(doreahconfig("caching"))

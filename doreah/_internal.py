@@ -1,5 +1,7 @@
 import os
 from functools import wraps
+import yaml
+
 
 # This is purely for documentation
 class Default:
@@ -38,34 +40,29 @@ def gopen(filepath,mode):
 
 
 
-# reads module configuration from file
-def doreahconfig(module):
-	from .settings import get_settings
-	s = get_settings(files=[".doreah"],prefix=module + ".",cut_prefix=True)
-	return s
-
-
 
 
 class DoreahConfig:
 
-	def __init__(self,module):
+	def __init__(self,module,**defaults):
 		self.module = module
 		self.configuration = {}
+		self.configuration.update(defaults)
+		self._readfile()
+
 
 	def _readfile(self):
-		from .settings import get_settings
-		s = get_settings(files=[".doreah"],prefix=self.module + ".",cut_prefix=True)
-		self.configuration.update(s)
+		try:
+			with open(".doreah","r") as fil:
+				s = yaml.safe_load(fil).get(self.module)
+			if s is not None: self.configuration.update(s)
+		except:
+			print("Doreah could not read its configuration file. Your application is likely not up to date and uses the old doreah format!")
 
-	# set configuration
+	# set configuration (exposes function to configure module)
 	def __call__(self,**kwargs):
 		self.configuration.update(kwargs)
 
-	def _initial(self,ignore_file=False,**kwargs):
-		self(**kwargs) # set initial values
-		if not ignore_file:
-			self._readfile() # overwrite from .doreah file
 
 	def __getitem__(self,key):
 		return self.configuration[key]

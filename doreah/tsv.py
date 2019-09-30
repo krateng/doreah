@@ -1,28 +1,19 @@
 import os
 
-from ._internal import DEFAULT, defaultarguments, doreahconfig
+from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
-_config = {}
 
-# set configuration
 # defaultextension	files with this extension will be regarded as valid files. can be overwritten per request.
 # comments			whether files may include commenting (indicated by #)
 # multitab			whether fields can be separated by multiple tabs (this makes empty fields impossible except when trailing)
-def config(defaultextension=".tsv",comments=True,multitab=True):
-	"""Configures default values for this module.
-
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["defaultextension"] = defaultextension
-	_config["comments"] = comments
-	_config["multitab"] = multitab
+config = DoreahConfig("tsv",
+	defaultextension=".tsv",
+	comments=True,
+	multitab=True
+)
 
 
-# initial config on import, set everything to default
-config()
-
-
-@defaultarguments(_config,comments="comments",multitab="multitab")
+@defaultarguments(config,comments="comments",multitab="multitab")
 def parse(filename,*args,comments=DEFAULT,multitab=DEFAULT):
 	"""Parses a tsv-like file.
 
@@ -33,7 +24,7 @@ def parse(filename,*args,comments=DEFAULT,multitab=DEFAULT):
 	:return: List of entries, one entry per line, each entry a list of fields"""
 
 	if not os.path.exists(filename):
-		filename = filename + _config["defaultextension"]
+		filename = filename + config["defaultextension"]
 
 	f = open(filename)
 
@@ -83,7 +74,7 @@ def parse(filename,*args,comments=DEFAULT,multitab=DEFAULT):
 	f.close()
 	return result
 
-@defaultarguments(_config,extension="defaultextension")
+@defaultarguments(config,extension="defaultextension")
 def parse_all(path,*args,extension=DEFAULT,**kwargs):
 	"""Parses all valid files in a specific directory
 
@@ -109,7 +100,7 @@ def create(filename):
 	if not os.path.exists(filename):
 		open(filename,"w").close()
 
-@defaultarguments(_config,comments="comments")
+@defaultarguments(config,comments="comments")
 def add_entry(filename,entry,comments=DEFAULT):
 	"""Adds an entry to a tsv-like file
 
@@ -127,7 +118,7 @@ def add_entry(filename,entry,comments=DEFAULT):
 	with open(filename,"a") as f:
 		f.write(line + "\n")
 
-@defaultarguments(_config,comments="comments")
+@defaultarguments(config,comments="comments")
 def add_entries(filename,entries,comments=DEFAULT):
 	"""Adds several entries to a tsv-like file
 
@@ -142,8 +133,3 @@ def add_entries(filename,entries,comments=DEFAULT):
 			line = "\t".join([str(field).replace("\t"," ") for field in entry])
 			if comments: line = line.replace("#",r"\num")
 			f.write(line + "\n")
-
-
-
-# now check local configuration file
-_config.update(doreahconfig("tsv"))

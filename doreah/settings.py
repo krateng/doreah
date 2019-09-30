@@ -1,38 +1,20 @@
 import os
 import shutil
 
-from ._internal import DEFAULT, defaultarguments, doreahconfig
+from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
 
-_config = {}
-
-# set configuration
-# defaultextension	unused
-# files				list of all files that will be used for configuration. high indicies overwrite low indicies
-# comment			symbols that indicate comments. careful!
-# category			symbols that indicate start and end of category name. only works at start of line
-# onlytext			interpret everything as a string. if False, strings can be put into quotes to avoid confusion
-def config(defaultextension=".ini",files=["settings.ini","settings.conf","configuration.ini","configuration.conf"],
-			comment=["#"],category=("[","]"),onlytext=False):
-	"""Configures default values for this module.
-
-	These defaults define behaviour of function calls when respective arguments are omitted. Any call of this function will overload the configuration in the .doreah file of the project. This function must be called with all configurations, as any omitted argument will reset to default, even if it has been changed with a previous function call."""
-	global _config
-	_config["defaultextension"] = defaultextension
-	_config["files"] = files
-	_config["comment"] = comment
-	_config["category"] = category
-	_config["onlytext"] = onlytext
-
-# initial config on import, set everything to default
-config()
-
-
+config = DoreahConfig("settings",
+	files=["settings.ini","settings.conf","configuration.ini","configuration.conf"],
+	comment=["#"],
+	category=("[","]"),
+	onlytext=False
+)
 
 
 
 def _interpret(text):
-	if _config["onlytext"]: return text
+	if config["onlytext"]: return text
 
 	if text.lower() in ["true","yes"]: return True
 	if text.lower() in ["false","no"]: return False
@@ -87,7 +69,7 @@ def _interpret(text):
 # cut_prefix	return keys without the prefix
 # category		return only keys of specific category
 # raw			do not interpret data type, only return strings
-@defaultarguments(_config,files="files")
+@defaultarguments(config,files="files")
 def get_settings(*keys,files=DEFAULT,prefix="",cut_prefix=False,category=None,raw=False):
 	"""Get the active settings value for all supplied keys. Get a dict of all settings (or only filtered) if no keys are supplied.
 
@@ -114,19 +96,19 @@ def get_settings(*keys,files=DEFAULT,prefix="",cut_prefix=False,category=None,ra
 		for l in lines:
 			# clean up line
 			l = l.replace("\n","")
-			for symbol in _config["comment"]:
+			for symbol in config["comment"]:
 				l = l.split(symbol)[0]
 			l = l.strip()
 
 			# check if valid settings entry
 			if l == "": continue
-			if l.startswith(_config["category"][0]):
+			if l.startswith(config["category"][0]):
 				# ignore category headers if we don't care
 				if category is None: continue
 				# otherwise, find out if this is the category we want
 				else:
-					if l.endswith(_config["category"][1]):
-						cat = l[len(_config["category"][0]):-len(_config["category"][1])]
+					if l.endswith(config["category"][1]):
+						cat = l[len(config["category"][0]):-len(config["category"][1])]
 						ignore = not (cat == category) #if this is the right heading, set ignore to false
 					continue
 
@@ -176,7 +158,7 @@ def update_settings(file,settings,create_new=False):
 		l = origline
 		# clean up line
 		l = l.replace("\n","")
-		for symbol in _config["comment"]:
+		for symbol in config["comment"]:
 			l = l.split(symbol)[0]
 		l = l.strip()
 
@@ -184,7 +166,7 @@ def update_settings(file,settings,create_new=False):
 		if l == "":
 			newlines.append(origline)
 			continue
-		if l.startswith(_config["category"][0]):
+		if l.startswith(config["category"][0]):
 			newlines.append(origline)
 			continue
 		if "=" not in l:
@@ -235,11 +217,3 @@ def update(source="default_settings.ini",target="settings.ini"):
 		usersettings = get_settings(files=[target],raw=True)
 		shutil.copyfile(source,target)
 		update_settings(target,usersettings)
-
-
-
-
-
-
-# now check local configuration file
-_config.update(doreahconfig("settings"))
