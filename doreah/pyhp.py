@@ -70,7 +70,7 @@ def _parse(src,d,interpret=DEFAULT,directory=None,noroot=False):
 		# pseudo root
 		src = "<pseudoroot>" + src + "</pseudoroot>"
 
-	doc = etree.XML(src)
+	doc = etree.HTML(src)
 	doc = _parse_node(doc,d,interpret,directory=directory)[0]
 
 	if noroot:

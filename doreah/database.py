@@ -1,5 +1,6 @@
 import pickle
 import yaml
+import os
 
 
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
@@ -54,7 +55,7 @@ class Database:
 
 		cls = obj.__class__
 
-		del self.id_to_object[uid]
+		self.id_to_object[uid] = None
 		self.class_to_objects[cls].remove(obj)
 		primkey = tuple(tuplify(obj.__getattribute__(v),ignore_capitalization=self.rules["ignore_capitalization"]) for v in cls.__primarykey__)
 		del self.class_primary_keys[cls][primkey]
@@ -212,8 +213,9 @@ class Database:
 					objd[var] = yamlify(getattr(obj,var))
 				d[cls.__name__].append(objd)
 
-		with open(self_db.file,"w") as f:
+		with open(self_db.file + ".tmp","w") as f:
 			yaml.dump(d,f)
+		os.replace(self_db.file + ".tmp",self_db.file)
 
 		print("Database saved to disk.")
 

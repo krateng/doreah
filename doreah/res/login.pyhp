@@ -1,0 +1,190 @@
+<html>
+	<head>
+		<script>
+		function pw_to_hex(pw) {
+			var utf8 = unescape(encodeURIComponent(pw));
+			var arr = [];
+			for (var i = 0; i < utf8.length; i++) {
+				arr.push(utf8.charCodeAt(i));
+			}
+			return arr.reduce((output, elem) => (output + ('0' + elem.toString(16)).slice(-2)),'');
+		}
+
+
+		function solve(generator,challenge,pw,modulo) {
+			pw = pw_to_hex(pw);
+			//console.log("challenge: " + challenge + ", pw: " + pw);
+			//pw = parseInt(pw,16);
+			pw = BigInt("0x" + pw);
+			//challenge = parseInt(challenge,16);
+			challenge = BigInt("0x" + challenge);
+			modulo = BigInt(modulo);
+			var res1 = expmod(generator,pw,modulo);
+			var result = expmod(res1,challenge,modulo);
+			//result = pw.modPow(challenge,modulo)
+			//console.log("result: " + result)
+			//console.log(result)
+			return result.toString(16);
+		}
+
+		function expmod( base, exp, mod ){
+			if (exp == 0n) return 1n;
+			if (exp % 2n == 0n){
+			//return Math.pow( expmod( base, (exp / 2n), mod), 2n) % mod;
+			return (expmod(base,(exp/2n),mod) ** 2n) % mod;
+			}
+			else {
+			return (base * expmod( base, (exp - 1n), mod)) % mod;
+			}
+		}
+
+
+		function update(generator,challenge,modulo) {
+			pw = document.getElementById("password").value;
+			if (pw == "") {
+				var resp = "";
+			}
+			else {
+				var resp = solve(generator,challenge,pw,modulo);
+			}
+
+			document.getElementById("response").value = resp;
+		}
+
+
+
+
+		function auth() {
+			var response = document.getElementById("response").value;
+			var challenge = document.getElementById("challenge").innerHTML;
+
+		//	xhttpreq("/auth/authenticate",data={"user":0,"response":response,"challenge":challenge},method="POST",callback=checkAuth);
+			xhttp = new XMLHttpRequest();
+			xhttp.onreadystatechange = function() {
+				if (this.readyState == 4) {
+					checkAuth(this);
+				}
+			}
+
+			data = {"user":0,"response":response,"challenge":challenge}
+			xhttp.open("POST","/auth/authenticate", true);
+
+			body = JSON.stringify(data);
+			xhttp.setRequestHeader("Content-Type","application/json");
+			xhttp.send(body);
+
+		}
+
+		function checkAuth(response) {
+			var res = JSON.parse(response.responseText);
+			console.log(res);
+			if (res.hasOwnProperty("token")) {
+				console.log("Login!")
+				var token = res["token"];
+				document.cookie = res["cookie_name"] + "=" + token;
+				location.assign("/");
+			}
+		}
+
+		function enterpress(evt) {
+			if (evt.keyCode === 13) {
+				auth();
+			}
+		}
+		</script>
+
+		<style>
+
+			div.centered_box {
+				background-color: rgba(0,0,0,0.1);
+				height:150px;
+				width:400px;
+				border-radius: 15px;
+
+				padding:25px;
+
+				position:absolute;
+				top:0;
+				bottom:0;
+				left:0;
+				right:0;
+				margin:auto;
+
+				text-align: center;
+				display:flex;
+				flex-direction: column;
+				align-items: center;
+			}
+			div.centered_box span {
+
+				text-overflow: ellipsis;
+			}
+			div.centered_box input,div.centered_box span,div.centered_box button {
+				padding:5px;
+				width:100%;
+				margin-top:5px;
+				height:26px;
+			}
+			div.centered_box span {
+				cursor: pointer;
+			}
+			div.centered_box button {
+				background-color:beige;
+				border:0px;
+			}
+			div.centered_box button:hover {
+				background-color:gold;
+				color:black;
+			}
+
+			input {
+				background-color: inherit;
+				border:0px;
+				font-size: inherit;
+				font:inherit;
+				text-align: inherit;
+				color:inherit;
+			}
+			input:focus {
+				outline:none;
+			}
+
+			span:focus {
+				outline:none;
+			}
+
+			.hide {
+				display:none;
+			}
+		</style>
+
+		<pyhp for="sheet" in="css">
+			<link rel="stylesheet" type="text/css" href="{sheet}" />
+		</pyhp>
+
+
+	</head>
+
+	<pyhp>
+		chall = get_challenge()
+		challenge = chall["challenge"]
+		modulo = chall["modulo"]
+		generator = chall["generator"]
+	</pyhp>
+
+	<body>
+		<div class="centered_box">
+			<span id="challengeshow" onclick="this.classList.add('hide');document.getElementById('challengeinfo').classList.remove('hide');">Show Challenge</span>
+			<span class="hide" id="challengeinfo" style="font-size:60%;cursor:default;"><pyhp echo="challenge" /></span>
+			<input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" oninput="update({generator}n,'{challenge}',{modulo}n)" onkeyup="enterpress(event)" />
+			<input id="response" placeholder="Response" />
+			<button id="loginbutton" onclick="auth()">Login</button>
+		</div>
+
+		<span class="hide" id="challenge"><pyhp echo="challenge" /></span>
+		<span class="hide" id="generator"><pyhp echo="generator" /></span>
+		<span class="hide" id="modulo"><pyhp echo="modulo" /></span>
+
+	</body>
+
+</html>

@@ -2,7 +2,9 @@ Modules
 ==============
 
 .. toctree::
+   auth
    caching
+   database
    io
    logging
    persistence
