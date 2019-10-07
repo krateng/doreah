@@ -12,7 +12,8 @@ import pkg_resources
 
 config = DoreahConfig("auth",
 	multiuser=True,
-	cookieprefix="doreahauth"
+	cookieprefix="doreahauth",
+	defaultpw="admin"
 )
 
 
@@ -110,6 +111,7 @@ class User(db.DBObject):
 
 if not config["multiuser"]:
 	defaultuser = User(username="")
+	if defaultuser.pubkey == "": defaultuser.setpw(config["defaultpw"])
 
 
 sessions = {} #token -> timestamp expire

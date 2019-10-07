@@ -117,8 +117,10 @@ class Database:
 							# many to 1
 							elif not classvar.exclusive and not isinstance(classvar,MultiRef):
 								def find_objects_that_reference_me(self,attr=v):
+									l = []
 									for obj in self_db.class_to_objects[cls]:
-										if obj.__getattribute__(attr) is self: yield obj
+										if obj.__getattribute__(attr) is self: l.append(obj)
+									return l
 								prop = property(find_objects_that_reference_me)
 
 							# 1 to many
@@ -129,10 +131,12 @@ class Database:
 								prop = property(find_object_that_references_me_among_others)
 
 							# many to many
-							elif not classvar.exclusive and isinstance(classvar,MultiRef):
+							elif not classvar.exclusive and isinstance(classvar,MultiRef):	
 								def find_objects_that_reference_me_among_others(self,attr=v):
+									l = []
 									for obj in self_db.class_to_objects[cls]:
-										if self in obj.__getattribute__(attr): yield obj
+										if self in obj.__getattribute__(attr): l.append(obj)
+									return l
 								prop = property(find_objects_that_reference_me_among_others)
 
 
