@@ -33,7 +33,7 @@ class Database:
 	def getby(self,cls,**keys):
 		if isinstance(cls,str): cls = [c for c in self.class_to_objects if c.__name__ == cls][0]
 
-		tup = tuple(tuplify(keys[k],ignore_capitalization=self.rules["ignore_capitalization"]) for k in cls.__primarykey__)
+		tup = tuple(tuplify(keys[k],ignore_capitalization=cls.__dbsettings__.get("ignore_capitalization")) for k in cls.__primarykey__)
 		return self.class_primary_keys[cls][tup]
 
 	def getby_or_create(self,cls,**keys):
@@ -57,16 +57,13 @@ class Database:
 
 		self.id_to_object[uid] = None
 		self.class_to_objects[cls].remove(obj)
-		primkey = tuple(tuplify(obj.__getattribute__(v),ignore_capitalization=self.rules["ignore_capitalization"]) for v in cls.__primarykey__)
+		primkey = tuple(tuplify(obj.__getattribute__(v),ignore_capitalization=cls.__dbsettings__.get("ignore_capitalization")) for v in cls.__primarykey__)
 		del self.class_primary_keys[cls][primkey]
 
-	def __init__(self_db,file="database.ddb",ignore_capitalization=False):
+	def __init__(self_db,file="database.ddb"):
 		print("Initializing database...")
 		self_db.file = file
 
-		self_db.rules = {
-			"ignore_capitalization":ignore_capitalization
-		}
 
 		self_db.id_to_object = {}
 		self_db.class_to_objects = {}
@@ -77,6 +74,7 @@ class Database:
 
 		# every instance creates a class to inherit from
 		class obj:
+			__dbsettings__ = {"ignore_capitalization":False}
 			def __repr__(self):
 				for attr in ["name","title","identifier"]:
 					try:
@@ -131,7 +129,7 @@ class Database:
 								prop = property(find_object_that_references_me_among_others)
 
 							# many to many
-							elif not classvar.exclusive and isinstance(classvar,MultiRef):	
+							elif not classvar.exclusive and isinstance(classvar,MultiRef):
 								def find_objects_that_reference_me_among_others(self,attr=v):
 									l = []
 									for obj in self_db.class_to_objects[cls]:
@@ -179,7 +177,7 @@ class Database:
 						self_db.class_to_objects[cls].append(self)
 
 						if len(cls.__primarykey__) > 0:
-							primkey = tuple(tuplify(vars[v],ignore_capitalization=self_db.rules["ignore_capitalization"]) for v in cls.__primarykey__)
+							primkey = tuple(tuplify(vars[v],ignore_capitalization=cls.__dbsettings__.get("ignore_capitalization")) for v in cls.__primarykey__)
 							self_db.class_primary_keys[cls][primkey] = self
 
 				cls.__init__ = init

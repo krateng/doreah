@@ -50,6 +50,7 @@ def ellipsis(txt,length,padded=False):
 
 # credit to StackOverflow user Greenstick
 def print_progress_bar(num=None,prct=None,prefix="",suffix="",decimals=0,length=100,fill="█",manualend=False):
+	if num is not None and num[1] == 0: prct = 1
 	if prct is None: prct = num[0] / num[1]
 	percent = ("{0:." + str(decimals) + "f}").format(100 * prct)
 	filledLength = int(length * prct)
