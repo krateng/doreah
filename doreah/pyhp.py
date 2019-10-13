@@ -68,13 +68,14 @@ def _parse(src,d,interpret=DEFAULT,directory=None,noroot=False):
 
 	if noroot:
 		# pseudo root
-		src = "<pseudoroot>" + src + "</pseudoroot>"
+		src = "<html><body>" + src + "</body></html>"
 
 	doc = etree.HTML(src)
 	doc = _parse_node(doc,d,interpret,directory=directory)[0]
 
+
 	if noroot:
-		return list(doc) #all child elements
+		return list(list(doc)[0]) #all child elements
 
 	return doc
 
@@ -139,6 +140,7 @@ def _parse_node(node,d,interpret,directory=None):
 		#### INCLUDE
 
 		elif _attr(node,"include") is not None:
+
 			filename = _attr(node,"include")
 			if directory is None:
 				# relative to execution path
@@ -147,12 +149,15 @@ def _parse_node(node,d,interpret,directory=None):
 				# relative to this file
 				filename = os.path.join(directory,filename)
 
-			#with open(filename,"r") as f:
-			#	raw = f.read()
 
-			subnodes = _file(filename,d,interpret=interpret,noroot=True)
-
-			return subnodes + [node.tail]
+			try:
+				subnodes = _file(filename,d,interpret=interpret,noroot=True)
+				for attr in node.keys():
+					if attr != "include":
+						subnodes[0].attrib[attr] = _attr(node,attr)
+				return subnodes + [node.tail]
+			except:
+				return [node.tail]
 
 
 		#### IF
