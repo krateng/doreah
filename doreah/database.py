@@ -25,7 +25,7 @@ class Database:
 
 	def getall(self,cls):
 		if isinstance(cls,str): cls = [c for c in self.class_to_objects if c.__name__ == cls][0]
-		return self.class_to_objects.get(cls)
+		return self.class_to_objects.get(cls)[:]
 
 	def get(self,id):
 		return self.id_to_object[id]

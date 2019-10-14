@@ -79,9 +79,9 @@ class ProgressBar:
 	def print(self):
 		self.prnt(num=(self.current,self.max))
 
-	def progress(self,num=1,suffix=""):
+	def progress(self,num=1,step=""):
 		self.current += num
-		self.step = suffix
+		self.step = step
 		self.print()
 		if self.current == self.max: self.finished = True
 
