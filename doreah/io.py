@@ -1,4 +1,5 @@
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
+from ._color import _ANSICOLOR
 
 
 config = DoreahConfig("io",
@@ -47,6 +48,29 @@ def ellipsis(txt,length,padded=False):
 			while len(txt) < length: txt += " "
 		return txt
 
+###
+## COLORED OUTPUT
+####
+
+# weird construct to enable quick function calls like col["yellow"](txt)
+class _Col:
+	def __getitem__(self, color):
+		def colored(txt,color=color):
+			pre,post = _ANSICOLOR(color)
+			return pre + txt + post
+
+		return colored
+col = _Col()
+
+
+
+
+
+
+
+###
+## PROGRESS BARS
+###
 
 # credit to StackOverflow user Greenstick
 def print_progress_bar(num=None,prct=None,prefix="",suffix="",decimals=0,length=100,fill="█",manualend=False):
@@ -87,6 +111,7 @@ class ProgressBar:
 
 	def done(self):
 		self.current = self.max
+		self.step = ""
 		if not self.finished:
 		#self.step = "Done!"
 			self.print()

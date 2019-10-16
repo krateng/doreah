@@ -23,21 +23,23 @@ class Primary:
 
 class Database:
 
+	def _getclassbyname(self,cls):
+		return [c for c in self.class_to_objects if c.__name__ == cls][0]
+
 	def getall(self,cls):
-		if isinstance(cls,str): cls = [c for c in self.class_to_objects if c.__name__ == cls][0]
+		if isinstance(cls,str): cls = self._getclassbyname(cls)
 		return self.class_to_objects.get(cls)[:]
 
 	def get(self,id):
 		return self.id_to_object[id]
 
 	def getby(self,cls,**keys):
-		if isinstance(cls,str): cls = [c for c in self.class_to_objects if c.__name__ == cls][0]
-
+		if isinstance(cls,str): cls = self._getclassbyname(cls)
 		tup = tuple(tuplify(keys[k],ignore_capitalization=cls.__dbsettings__.get("ignore_capitalization")) for k in cls.__primarykey__)
 		return self.class_primary_keys[cls][tup]
 
 	def getby_or_create(self,cls,**keys):
-		if isinstance(cls,str): cls = [c for c in self.class_to_objects if c.__name__ == cls][0]
+		if isinstance(cls,str): cls = self._getclassbyname(cls)
 
 		try:
 			return self.getby(cls,**keys)

@@ -3,6 +3,7 @@ import inspect
 import os
 
 from ._internal import defaultarguments, gopen, DoreahConfig
+from ._color import _ANSICOLOR
 
 
 _queue = []
@@ -22,23 +23,6 @@ config = DoreahConfig("logging",
 
 
 
-def _colorcodes(color):
-	if color is None: return "",""
-	names = {
-		"red":(255,0,0),
-		"green":(0,255,0),
-		"blue":(0,0,255)
-	}
-	if color in names:
-		color = names[color]
-	if isinstance(color,str) and color.startswith("#"):
-		color = int(color[1:3],16),int(color[3:5],16),int(color[5:7],16)
-
-	start = "\033[38;2;" + ";".join(str(c) for c in color) + "m"
-	end = "\033[0m"
-	return start,end
-
-
 def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 	"""Logs all supplied arguments, separate line for each. Only writes to logfile if importance value is lower than the set verbosity value.
 
@@ -52,7 +36,7 @@ def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 	now = datetime.datetime.utcnow().strftime(config["timeformat"])
 
 
-	colorprefix,colorsuffix = _colorcodes(color)
+	colorprefix,colorsuffix = _ANSICOLOR(color)
 
 	# log() can be used to add empty line
 	if len(entries) == 0: entries = ("",)
