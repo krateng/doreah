@@ -319,5 +319,7 @@ if __name__ == "__main__":
 		if os.path.exists(path + ".html"):
 			return static_file(path + ".html",root="")
 
+		return static_file(path,root="") # will produce proper error
+
 
 	run(host="::",port=1337)

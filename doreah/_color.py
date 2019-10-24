@@ -13,8 +13,10 @@ def _ANSICOLOR(code):
 			if code.lower() in colornames:
 				code = colornames[code.lower()]
 			return _ANSIHEX(code), _ANSI()
-		if isinstance(code,tuple):
+		elif isinstance(code,tuple):
 			return _ANSIRGB(*code), _ANSI()
+		else:
+			return "",""
 	except:
 		return "",""
 
