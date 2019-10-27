@@ -56,7 +56,8 @@ def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 	# module name
 	if module is None:
 		try:
-			module = inspect.getmodule(inspect.stack()[1][0]).__name__
+			module = inspect.getmodule(inspect.stack()[1][0])
+			module = getattr(module,"__logmodulename__",module.__name__)
 			if module == "__main__": module = config["defaultmodule"]
 		except:
 			module = "interpreter"
