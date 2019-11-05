@@ -1,5 +1,5 @@
 name = "doreah"
-version = 1,2,1
+version = 1,2,3
 versionstr = ".".join(str(n) for n in version)
 author = {
 	"name": "Johannes Krattenmacher",
@@ -11,7 +11,7 @@ requires = [
 	"mechanicalsoup",
 	"requests",
 	"pyyaml",
-	"beautifulsoup"
+	"beautifulsoup4"
 ]
 
 
