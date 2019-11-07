@@ -13,10 +13,15 @@ requires = [
 	"pyyaml",
 	"beautifulsoup4"
 ]
+resources = [
+	'res/login.pyhp'
+]
 
 
 __all__ = [
+	"auth",
 	"caching",
+	"database",
 	"io",
 	"logging",
 	"persistence",
