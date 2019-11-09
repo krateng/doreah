@@ -147,6 +147,8 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 			#print("Page",pagenum,"URL",url)
 			elements = scrape(url,steps_elements,attempts=attempts,requires_javascript=requires_javascript)
 			#print(len(elements),"on this page")
+			if len(elements) == 0:
+				break
 
 			for e in elements:
 				if returned >= stop: raise _GoodException("Number of elements reached")
