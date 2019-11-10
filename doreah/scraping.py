@@ -41,7 +41,8 @@ def parse(initial,steps):
 			elif steptype == "rmprefix":
 				if result.startswith(instruction): result = result.replace(instruction,"",1)
 			elif steptype == "regex":
-				result = re.sub(instruction,r"\1",result)
+			#	result = re.sub(instruction,r"\1",result)
+				result = "".join(re.findall(instruction,result)[0])
 			elif steptype == "last":
 				result = result.split(instruction)[-1]
 
@@ -81,7 +82,8 @@ def parse(initial,steps):
 					elif steptype == "rmprefix":
 						if result[k].startswith(instruction): result[k] = result[k].replace(instruction,"",1)
 					elif steptype == "regex":
-						result[k] = re.sub(instruction,r"\1",result[k])
+					#	result[k] = re.sub(instruction,r"\1",result[k])
+						result[k] = "".join(re.findall(instruction,result[k])[0])
 					elif steptype == "last":
 						result[k] = result[k].split(instruction)[-1]
 
