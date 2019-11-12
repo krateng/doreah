@@ -175,3 +175,12 @@ def cmd_handle(shortcuts):
 			cmd = cmd[1:]
 
 	return args,kwargs
+
+def mainfunction(shortcuts):
+	def decorator(func):
+		args,kwargs = cmd_handle(shortcuts)
+
+		func(*args,**kwargs)
+		# just run function, no need to return it
+
+	return decorator
