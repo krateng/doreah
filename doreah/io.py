@@ -1,6 +1,7 @@
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
 from ._color import _ANSICOLOR
 
+import sys
 
 config = DoreahConfig("io",
 	yesvalues=["y","yes","yea","1","positive","true"],
@@ -154,3 +155,23 @@ class NestedProgressBar(ProgressBar):
 		self.layers[-1][0] += num
 		self.print()
 		if self.layers[-1][0] == self.layers[-1][1] and not self.manual: self.done()
+
+
+
+def cmd_handle(shortcuts):
+	cmd = sys.argv[1:]
+	args = []
+	kwargs = {}
+
+	while len(cmd) > 0:
+		if cmd[0].startswith("-") and cmd[0][1:] in shortcuts:
+			kwargs[shortcuts[cmd[0][1:]]] = cmd[1]
+			cmd = cmd[2:]
+		elif cmd[0].startswith("--"):
+			kwargs[cmd[0][2:]] = cmd[1]
+			cmd = cmd[2:]
+		else:
+			args.append(cmd[0])
+			cmd = cmd[1:]
+
+	return args,kwargs
