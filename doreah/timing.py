@@ -48,3 +48,21 @@ def clockp(name,*identifiers):
 	:param string identifiers: Unique identifiers for timing to be taken"""
 	time = clock(*identifiers)
 	print(name + ": " + str(time))
+
+class Clock:
+	def __init__(self,name=None):
+		self.name = name
+		self.running = False
+		self.elapsed = 0
+
+	def start(self):
+		if not self.running:
+			self.lastcall = time.time()
+			self.running = True
+
+	def stop(self):
+		if self.running:
+			self.elapsed += time.time() - self.lastcall
+			self.running = False
+
+		return self.elapsed * (1000**config["si"])
