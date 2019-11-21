@@ -2,6 +2,8 @@ from bs4 import BeautifulSoup
 from copy import deepcopy
 import re
 import os
+import hashlib
+import copy
 
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
@@ -12,10 +14,10 @@ config = DoreahConfig("pyhp",
 
 
 
-
+precompiled = {}
 
 @defaultarguments(config,interpret="interpret")
-def file(path,d={},interpret=DEFAULT,noroot=False):
+def file(path,d={},interpret=DEFAULT,noroot=False,precompile=True):
 	"""Parses a pyhp source file and returns the generated html code.
 
 	:param string path: Location of the pyhp source file
@@ -24,10 +26,24 @@ def file(path,d={},interpret=DEFAULT,noroot=False):
 	:return: HTML source
 	"""
 
+	filepath = os.path.abspath(path)
+	directory = os.path.dirname(filepath)
+
 	with open(path,"r") as f:
 		content = f.read()
 
-	directory = os.path.dirname(os.path.abspath(path))
+	if precompile:
+
+		h = hashlib.md5()
+		h.update(content.encode())
+		check = h.digest()
+		if filepath in precompiled and precompiled[filepath]["checksum"] == check:
+			pass
+		else:
+			precompiled[filepath] = {"object":BeautifulSoup(content,"html.parser"),"checksum":check}
+		content = copy.copy(precompiled[filepath]["object"])
+
+
 
 	return parse(content,d,interpret=interpret,directory=directory,noroot=noroot)
 
@@ -62,7 +78,13 @@ def parse(src,d={},interpret=DEFAULT,directory=None,noroot=False):
 # to tree
 def _parse(src,d,interpret=DEFAULT,directory=None,noroot=False):
 
-	doc = BeautifulSoup(src,"html.parser")
+
+	if isinstance(src,str):
+		doc = BeautifulSoup(src,"html.parser")
+	elif isinstance(src,BeautifulSoup):
+		doc = src
+	else:
+		raise Exception
 	doc = _parse_node(doc,d,interpret,directory=directory)[0]
 	#result = list(doc.children)
 
