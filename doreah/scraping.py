@@ -139,7 +139,7 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 		getpage = page_multiplier
 
 
-	pagenum = 0
+	pagenum = start_page
 	returned = 0
 
 	try:
@@ -166,7 +166,9 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 						resultelement[attribute] = res
 
 					#result.append(resultelement)
+					#print(resultelement)
 					yield resultelement
+
 					returned += 1
 				except _GoodException:
 					raise

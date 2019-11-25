@@ -5,8 +5,40 @@ import urllib.request
 import shutil
 import distutils.dir_util
 import sys
+#import inspect
 
 config = DoreahConfig("control")
+
+
+def cmd_handle(shortcuts):
+	cmd = sys.argv[1:]
+	args = []
+	kwargs = {}
+
+	while len(cmd) > 0:
+		if cmd[0].startswith("-") and cmd[0][1:] in shortcuts:
+			kwargs[shortcuts[cmd[0][1:]]] = cmd[1]
+			cmd = cmd[2:]
+		elif cmd[0].startswith("--"):
+			kwargs[cmd[0][2:]] = cmd[1]
+			cmd = cmd[2:]
+		else:
+			args.append(cmd[0])
+			cmd = cmd[1:]
+
+	return args,kwargs
+
+def mainfunction(shortcuts):
+	def decorator(func):
+		args,kwargs = cmd_handle(shortcuts)
+		for var in kwargs:
+			if var in func.__annotations__:
+				kwargs[var] = func.__annotations__[var](kwargs[var])
+		if func.__module__ == "__main__":
+			func(*args,**kwargs)
+		return func
+
+	return decorator
 
 
 class Controller:
