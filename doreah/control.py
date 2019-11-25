@@ -28,15 +28,25 @@ def cmd_handle(shortcuts):
 
 	return args,kwargs
 
-def mainfunction(shortcuts):
+def mainfunction(shortcuts,shield=False):
 	def decorator(func):
-		args,kwargs = cmd_handle(shortcuts)
-		for var in kwargs:
-			if var in func.__annotations__:
-				kwargs[var] = func.__annotations__[var](kwargs[var])
+		# define a wrapper function that takes no args itself,
+		# but reads them from console and passes them down
+		def wrapper():
+			args,kwargs = cmd_handle(shortcuts)
+			for var in kwargs:
+				if var in func.__annotations__:
+					kwargs[var] = func.__annotations__[var](kwargs[var])
+			return func(*args,**kwargs)
+
+		# if this module is the script, call that function immediately
 		if func.__module__ == "__main__":
-			func(*args,**kwargs)
-		return func
+			wrapper()
+
+		# either return the original function if used with arguments in other places,
+		# or return the wrapper if the function is called from command line through
+		# some other means (console script)
+		return wrapper if shield else func
 
 	return decorator
 
