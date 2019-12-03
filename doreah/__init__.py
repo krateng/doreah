@@ -1,5 +1,5 @@
 name = "doreah"
-version = 1,2,9
+version = 1,2,10
 versionstr = ".".join(str(n) for n in version)
 author = {
 	"name": "Johannes Krattenmacher",
@@ -33,6 +33,8 @@ __all__ = [
 	"tsv"
 
 ]
+
+from ._internal import config
 
 
 

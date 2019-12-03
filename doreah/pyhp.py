@@ -2,7 +2,7 @@ from ._internal import DoreahConfig
 
 config = DoreahConfig("pyhp",
 	interpret=str,
-	version=1
+	version=2
 )
 
 if config["version"] == 1:

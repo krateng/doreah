@@ -49,6 +49,7 @@ class DoreahConfig:
 		self.configuration = {}
 		self.configuration.update(defaults)
 		self._readfile()
+		self._readpreconfig()
 
 
 	def _readfile(self):
@@ -61,6 +62,11 @@ class DoreahConfig:
 		except:
 			print("Doreah could not read its configuration file. Your application is likely not up to date and uses the old doreah format!")
 
+	def _readpreconfig(self):
+		s = _preconfig.get(self.module)
+		if s is not None: self.configuration.update(s)
+
+
 	# set configuration (exposes function to configure module)
 	def __call__(self,**kwargs):
 		self.configuration.update(kwargs)
@@ -71,3 +77,9 @@ class DoreahConfig:
 
 	def __repr__(self):
 		return "Configuration for " + self.module + ": " + repr(self.configuration)
+
+_preconfig = {}
+
+def config(**modules):
+	global _preconfig
+	_preconfig = modules
