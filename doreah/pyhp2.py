@@ -290,7 +290,10 @@ def _attr(node,name):
 
 ### run test server
 
-if __name__ == "__main__":
+from .control import mainfunction
+
+@mainfunction({"p":"port","h":"host"})
+run_testserver(port=1337,host="::"):
 	from bottle import get, run, static_file
 	from doreah.pyhp import file
 	import os
@@ -308,4 +311,4 @@ if __name__ == "__main__":
 		return static_file(path,root="") # will produce proper error
 
 
-	run(host="::",port=1337)
+	run(host=host,port=port)

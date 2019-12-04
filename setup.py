@@ -26,4 +26,10 @@ setuptools.setup(
 	install_requires=module.requires,
 	package_data={'': module.resources},
 	include_package_data=True,
+	entry_points = {
+		"console_scripts":[
+			cmd + " = " + module.name + "." + module.commands[cmd]
+			for cmd in module.commands
+		]
+	}
 )
