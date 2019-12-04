@@ -3,6 +3,7 @@
 !LICENSE*
 !.gitignore
 !/doreah/
+!/setup.py
 !/docs/
 /docs/_build
 *.pyc

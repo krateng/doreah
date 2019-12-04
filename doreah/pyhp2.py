@@ -9,20 +9,22 @@ from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
 
 config = DoreahConfig("pyhp",
-	interpret=str
+	interpret=str,
+	precompile=True
 )
 
 
 
 precompiled = {}
 
-@defaultarguments(config,interpret="interpret")
-def file(path,d={},interpret=DEFAULT,noroot=False,precompile=True):
+@defaultarguments(config,interpret="interpret",precompile="precompile")
+def file(path,d={},interpret=DEFAULT,noroot=False,precompile=DEFAULT):
 	"""Parses a pyhp source file and returns the generated html code.
 
 	:param string path: Location of the pyhp source file
 	:param dict d: Variables dictionary
 	:param function interpret: Function that determines string representations of variables
+	:param bool precompile: Whether compiled pyhp pages should be cached in memory for faster page generation
 	:return: HTML source
 	"""
 

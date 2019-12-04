@@ -1,6 +1,7 @@
 name = "doreah"
 version = 1,2,10
 versionstr = ".".join(str(n) for n in version)
+desc = "Small toolkit of utilities for python projects"
 author = {
 	"name": "Johannes Krattenmacher",
 	"email": "python@krateng.dev",
