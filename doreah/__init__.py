@@ -1,5 +1,5 @@
 name = "doreah"
-version = 1,2,11
+version = 1,2,13
 versionstr = ".".join(str(n) for n in version)
 desc = "Small toolkit of utilities for python projects"
 author = {
@@ -19,7 +19,7 @@ resources = [
 ]
 
 commands = {
-	"pyhpserver":"pyhp:run_testserver"
+	"pyhpserver":"pyhp2:run_testserver"
 }
 
 

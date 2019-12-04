@@ -292,8 +292,8 @@ def _attr(node,name):
 
 from .control import mainfunction
 
-@mainfunction({"p":"port","h":"host"})
-run_testserver(port=1337,host="::"):
+@mainfunction({"p":"port","h":"host"},shield=True)
+def run_testserver(port=1337,host="::"):
 	from bottle import get, run, static_file
 	from doreah.pyhp import file
 	import os
