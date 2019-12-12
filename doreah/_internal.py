@@ -82,4 +82,4 @@ _preconfig = {}
 
 def config(**modules):
 	global _preconfig
-	_preconfig = modules
+	_preconfig.update(modules)

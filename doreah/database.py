@@ -281,7 +281,7 @@ class Database:
 
 
 def yamlify(obj):
-	if type(obj) in [str,int,float]: return obj
+	if type(obj) in [str,int,float,bool]: return obj
 	if obj == [] or obj == {}: return obj
 
 	try:
