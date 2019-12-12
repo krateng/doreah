@@ -1,4 +1,5 @@
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
+from .io import col
 import zipfile
 import os
 import urllib.request
@@ -8,6 +9,7 @@ import sys
 import subprocess
 import signal
 #import inspect
+
 
 config = DoreahConfig("control")
 
