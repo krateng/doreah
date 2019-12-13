@@ -229,6 +229,33 @@ def _parse_node(node,d,interpret,directory=None):
 			return nodestoreturn
 
 
+		### LOCAL SCOPE
+
+		elif _attr(node,"with") is not None:
+
+			localdict = eval(_attr(node,"with"),d)
+			hidedict = {}
+
+			# save overridden variables
+			for key in localdict:
+				if key in d:
+					hidedict[key] = d[key]
+
+			d.update(localdict)
+
+			nodestoreturn = []
+			for sn in node:
+				nodestoreturn += _parse_node(deepcopy(sn),d,interpret,directory=directory)
+
+			# restore outer environment
+			for key in localdict:
+				del d[key]
+			for key in hidedict:
+				d[key] = hidedict[key]
+
+			return nodestoreturn
+
+
 		#### ECHO
 
 		elif _attr(node,"echo") is not None:
