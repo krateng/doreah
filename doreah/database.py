@@ -78,14 +78,17 @@ class Database:
 		class obj:
 			__dbsettings__ = {"ignore_capitalization":False}
 			def __repr__(self):
-				for attr in ["name","title","identifier"]:
-					try:
-						name = getattr(self,attr)
-						break
-					except:
-						pass
-				else:
-					name = "Unknown"
+				try:
+					name = self.__db_repr__()
+				except:
+					for attr in ["name","title","identifier"]:
+						try:
+							name = getattr(self,attr)
+							break
+						except:
+							pass
+					else:
+						name = "Unknown"
 				return "<[" + str(self.uid) + "] " + self.__class__.__name__  + " '" + name + "'>"
 
 			def __init_subclass__(cls):
