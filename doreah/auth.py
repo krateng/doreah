@@ -13,11 +13,12 @@ import pkg_resources
 config = DoreahConfig("auth",
 	multiuser=True,
 	cookieprefix="doreahauth",
-	defaultpw="admin"
+	defaultpw="admin",
+	dbfile="authdb.ddb"
 )
 
 
-db = Database(file="authdb.ddb")
+db = Database(file=config["dbfile"])
 cookie_token_name = config["cookieprefix"] + "_sessiontoken"
 authapi = EAPI(path="auth",delay=True)
 

@@ -32,3 +32,7 @@ def pkgdata(*args):
 def init_datafolder():
 	_set_datafolder()
 	dir_util.copy_tree(config["populate"],DATA_DIR,update=False)
+
+def get_datafolder():
+	_set_datafolder()
+	return DATA_DIR
