@@ -173,7 +173,14 @@ class Database:
 						# set defaults
 						for v in types:
 							if v not in vars or vars[v] is None:
-								setattr(self,v,types[v]()) # can just call type to get a version of it, e.g. list() -> []
+								try:
+									setattr(self,v,types[v]()) # can just call type to get a version of it, e.g. list() -> []
+								except:
+									# if we have a custom type (another db type), we might not be able
+									# to call it without primary key. we don't want to generate a fake one
+									# that is saved in the database just because we don't have this attribute yet
+									setattr(self,v,None)
+
 
 						# register object with Database
 						self.uid = force_uid if force_uid is not None else \
