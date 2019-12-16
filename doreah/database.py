@@ -283,6 +283,7 @@ class Database:
 def yamlify(obj):
 	if type(obj) in [str,int,float,bool]: return obj
 	if obj == [] or obj == {}: return obj
+	if obj is None: return None
 
 	try:
 		return {k:yamlify(obj[k]) for k in obj}
