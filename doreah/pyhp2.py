@@ -173,7 +173,7 @@ def _parse_node(node,d,interpret,directory=None):
 						subnodes[0].attrs[attr] = _attr(node,attr)
 				return subnodes
 			except:
-				raise
+				print("Could not include",filename)
 				return []
 
 

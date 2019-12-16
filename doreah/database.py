@@ -66,6 +66,8 @@ class Database:
 		print("Initializing database...")
 		self_db.file = file
 
+		self_db.counter = 0
+
 
 		self_db.id_to_object = {}
 		self_db.class_to_objects = {}
@@ -173,9 +175,9 @@ class Database:
 						# set defaults
 						for v in types:
 							if v not in vars or vars[v] is None:
-								try:
+								if types[v] in [str,int,float,list]:
 									setattr(self,v,types[v]()) # can just call type to get a version of it, e.g. list() -> []
-								except:
+								else:
 									# if we have a custom type (another db type), we might not be able
 									# to call it without primary key. we don't want to generate a fake one
 									# that is saved in the database just because we don't have this attribute yet
@@ -183,10 +185,12 @@ class Database:
 
 
 						# register object with Database
-						self.uid = force_uid if force_uid is not None else \
-							max(self_db.id_to_object) + 1 if len(self_db.id_to_object) > 0 else 0
+						self.uid = force_uid if force_uid is not None else self_db.counter
+							#max(self_db.id_to_object) + 1 if len(self_db.id_to_object) > 0 else 0
+
 						self_db.id_to_object[self.uid] = self
 						self_db.class_to_objects[cls].append(self)
+						while self_db.counter in self_db.id_to_object: self_db.counter += 1
 
 						if len(cls.__primarykey__) > 0:
 							primkey = tuple(tuplify(vars[v],ignore_capitalization=cls.__dbsettings__.get("ignore_capitalization")) for v in cls.__primarykey__)
@@ -240,6 +244,7 @@ class Database:
 				self_db.loadarea = yaml.safe_load(f)
 				# temporary storage until proper classes are defined
 			print("Database loaded into memory.")
+			self_db.counter = max([0] + [obj["uid"] for cls in self_db.loadarea for obj in self_db.loadarea[cls]])
 			self_db.inject()
 		except:
 			print("No existing database found.")
