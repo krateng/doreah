@@ -165,16 +165,39 @@ def _parse_node(node,d,interpret,directory=None):
 				filename = os.path.join(directory,filename)
 
 
+			if _attr(node,"with") is not None:
+
+				localdict = eval(_attr(node,"with"),d)
+				hidedict = {}
+				# save overridden variables
+				for key in localdict:
+					if key in d:
+						hidedict[key] = d[key]
+				d.update(localdict)
+
+
+
+
 			try:
 				subnodes = _file(filename,d,interpret=interpret,noroot=True)
 				for attr in node.attrs:
 					# give attributes to included first top node
-					if attr != "include":
+					if attr not in ["with","include"]:
 						subnodes[0].attrs[attr] = _attr(node,attr)
-				return subnodes
+
 			except:
 				print("Could not include",filename)
-				return []
+				raise
+				subnodes = []
+
+			if _attr(node,"with") is not None:
+				# restore outer environment
+				for key in localdict:
+					del d[key]
+				for key in hidedict:
+					d[key] = hidedict[key]
+
+			return subnodes
 
 
 		#### IF
