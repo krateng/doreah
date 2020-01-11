@@ -66,3 +66,16 @@ class Clock:
 			self.running = False
 
 		return self.elapsed * (1000**config["si"])
+
+	def time(self):
+		now = time.time()
+		if self.running:
+			self.elapsed += now - self.lastcall
+			self.lastcall = now
+		return self.elapsed
+
+	def restart(self):
+		res = self.stop()
+		self.elapsed = 0
+		self.start()
+		return res
