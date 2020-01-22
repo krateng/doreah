@@ -6,6 +6,7 @@ import hashlib
 import copy
 
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
+from .datatypes import DictStack
 
 
 config = DoreahConfig("pyhp",
@@ -16,6 +17,28 @@ config = DoreahConfig("pyhp",
 
 
 precompiled = {}
+
+
+
+def compile(raw):
+
+	soup = BeautifulSoup(raw,"html.parser")
+
+	compile_node_expressions(soup)
+	return soup
+
+def compile_node_expressions(node):
+	if isinstance(node,str): return
+
+	if node.name == "pyhp":
+		for a in ["in","with","save","if"]:
+			if _attr(node,a) is not None:
+				node[a] = compile(_attr(node,a))
+
+	for subnode in node:
+		compile_node_expressions(subnode)
+
+
 
 @defaultarguments(config,interpret="interpret",precompile="precompile")
 def file(path,d={},interpret=DEFAULT,noroot=False,precompile=DEFAULT):
@@ -42,7 +65,7 @@ def file(path,d={},interpret=DEFAULT,noroot=False,precompile=DEFAULT):
 		if filepath in precompiled and precompiled[filepath]["checksum"] == check:
 			pass
 		else:
-			precompiled[filepath] = {"object":BeautifulSoup(content,"html.parser"),"checksum":check}
+			precompiled[filepath] = {"object":compile(content),"checksum":check}
 		content = copy.copy(precompiled[filepath]["object"])
 
 
@@ -80,6 +103,7 @@ def parse(src,d={},interpret=DEFAULT,directory=None,noroot=False):
 # to tree
 def _parse(src,d,interpret=DEFAULT,directory=None,noroot=False):
 
+	if not isinstance(d,DictStack): d = DictStack(d)
 
 	if isinstance(src,str):
 		doc = BeautifulSoup(src,"html.parser")
@@ -131,7 +155,7 @@ def _parse_node(node,d,interpret,directory=None):
 				code = [line[roottabs:] for line in code]
 				code = "\n".join(code)
 
-			exec(code,d)
+			exec(code,{},d)
 
 			return []
 
@@ -139,7 +163,7 @@ def _parse_node(node,d,interpret,directory=None):
 
 		if _attr(node,"save") is not None and _attr(node,"as") is not None:
 			#print("d[" + _attr(node,"as") + "] = " + _attr(node,"save"))
-			d[_attr(node,"as")] = eval(_attr(node,"save"),d)
+			d[_attr(node,"as")] = eval(_attr(node,"save"),{},d)
 			#print({k:d[k] for k in d if not k.startswith("_")})
 
 			return []
@@ -147,7 +171,7 @@ def _parse_node(node,d,interpret,directory=None):
 		### IMPORT
 
 		if _attr(node,"import") is not None:
-			exec("import " + _attr(node,"import"),d)
+			exec("import " + _attr(node,"import"),{},d)
 
 			return []
 
@@ -167,13 +191,15 @@ def _parse_node(node,d,interpret,directory=None):
 
 			if _attr(node,"with") is not None:
 
-				localdict = eval(_attr(node,"with"),d)
-				hidedict = {}
-				# save overridden variables
-				for key in localdict:
-					if key in d:
-						hidedict[key] = d[key]
-				d.update(localdict)
+				localdict = eval(_attr(node,"with"),{},d)
+
+				d.push(localdict)
+			#	hidedict = {}
+			#	# save overridden variables
+			#	for key in localdict:
+			#		if key in d:
+			#			hidedict[key] = d[key]
+			#	d.update(localdict)
 
 
 
@@ -192,10 +218,11 @@ def _parse_node(node,d,interpret,directory=None):
 
 			if _attr(node,"with") is not None:
 				# restore outer environment
-				for key in localdict:
-					del d[key]
-				for key in hidedict:
-					d[key] = hidedict[key]
+			#	for key in localdict:
+			#		del d[key]
+			#	for key in hidedict:
+			#		d[key] = hidedict[key]
+				d.pop()
 
 			return subnodes
 
@@ -203,7 +230,7 @@ def _parse_node(node,d,interpret,directory=None):
 		#### IF
 
 		elif _attr(node,"if") is not None:
-			if eval(_attr(node,"if"),d):
+			if eval(_attr(node,"if"),{},d):
 				nodestoreturn = []
 				for sn in node:
 					nodestoreturn += _parse_node(sn,d,interpret,directory=directory)
@@ -219,7 +246,7 @@ def _parse_node(node,d,interpret,directory=None):
 			# for loop of the elements
 			first = True
 			try:
-				elements = eval(_attr(node,"in"),d)
+				elements = eval(_attr(node,"in"),{},d)
 			except:
 				# allow invalid expressions in for loops, just ignore them
 				elements = []
@@ -229,25 +256,28 @@ def _parse_node(node,d,interpret,directory=None):
 				first = False
 
 				# in case we overload a dict entry, keep the old one
-				sentinel = object()
-				if _attr(node,"for") in d:
-					hide = d[_attr(node,"for")]
-				else:
-					hide = sentinel
+			#	sentinel = object()
+			#	if _attr(node,"for") in d:
+			#		hide = d[_attr(node,"for")]
+			#	else:
+			#		hide = sentinel
+			#
+			#
+			#	# the dict needs to remain the same object so changes from one node
+			#	# in the for loop are carried over into the next loop
+			#	d.update({_attr(node,"for"):element})
 
-				# the dict needs to remain the same object so changes from one node
-				# in the for loop are carried over into the next loop
-				d.update({_attr(node,"for"):element})
+				d.push({_attr(node,"for"):element})
 
 				# now go through the nodes each time
 				for sn in node:
 					nodestoreturn += _parse_node(deepcopy(sn),d,interpret,directory=directory)
 
 				# clear the variable after each loop
-				del d[_attr(node,"for")]
-				if hide is not sentinel:
-					d[_attr(node,"for")] = hide
-
+			#	del d[_attr(node,"for")]
+			#	if hide is not sentinel:
+			#		d[_attr(node,"for")] = hide
+				d.pop()
 
 			return nodestoreturn
 
@@ -256,25 +286,27 @@ def _parse_node(node,d,interpret,directory=None):
 
 		elif _attr(node,"with") is not None:
 
-			localdict = eval(_attr(node,"with"),d)
-			hidedict = {}
-
-			# save overridden variables
-			for key in localdict:
-				if key in d:
-					hidedict[key] = d[key]
-
-			d.update(localdict)
+			localdict = eval(_attr(node,"with"),{},d)
+		#	hidedict = {}
+		#
+		#	# save overridden variables
+		#	for key in localdict:
+		#		if key in d:
+		#			hidedict[key] = d[key]
+		#
+		#	d.update(localdict)
+			d.push(localdict)
 
 			nodestoreturn = []
 			for sn in node:
 				nodestoreturn += _parse_node(deepcopy(sn),d,interpret,directory=directory)
 
 			# restore outer environment
-			for key in localdict:
-				del d[key]
-			for key in hidedict:
-				d[key] = hidedict[key]
+		#	for key in localdict:
+		#		del d[key]
+		#	for key in hidedict:
+		#		d[key] = hidedict[key]
+			d.pop()
 
 			return nodestoreturn
 
@@ -282,7 +314,7 @@ def _parse_node(node,d,interpret,directory=None):
 		#### ECHO
 
 		elif _attr(node,"echo") is not None:
-			return BeautifulSoup(interpret(eval(_attr(node,"echo"),d)),"html.parser")
+			return BeautifulSoup(interpret(eval(_attr(node,"echo"),{},d)),"html.parser")
 			#return [interpret(eval(_attr(node,"echo"),d))]
 
 
@@ -304,7 +336,7 @@ def _parse_node(node,d,interpret,directory=None):
 				for v in vars:
 					vname = v[1:-1]
 					try:
-						value = value.replace(v,interpret(eval(vname,d)))
+						value = value.replace(v,interpret(eval(vname,{},d)))
 					except:
 						pass
 						print("Error parsing:",v,"in attribute")
@@ -328,14 +360,7 @@ def _parse_node(node,d,interpret,directory=None):
 
 
 def _attr(node,name):
-	res = node.get(name)
-	try:
-		return res.replace(" gr "," > ").replace(" ls "," < ")
-	except:
-		return res
-
-
-
+	return node.get(name)
 
 
 ### run test server
