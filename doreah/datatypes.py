@@ -81,3 +81,26 @@ class DictStack:
 	@property
 	def globl(self):
 		return self.stack[0]
+
+	@property
+	def height(self):
+		return len(self.stack)
+
+
+	def newlayer(self,*args,**kwargs):
+		return DictStackLayer(stack=self,height=self.height,dict=dict(*args,**kwargs))
+
+class DictStackLayer:
+
+	def __init__(self,stack,height,dict):
+		self.stack = stack
+		self.height = height
+		self.dict = dict
+
+	def __enter__(self):
+		assert self.stack.height == self.height
+		self.stack.push(self.dict)
+
+	def __exit__(self,*exc):
+		assert self.stack.height == self.height + 1
+		self.stack.pop()
