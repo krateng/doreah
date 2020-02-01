@@ -1,6 +1,7 @@
 import datetime
 import inspect
 import os
+import shutil
 
 from ._internal import defaultarguments, gopen, DoreahConfig
 from ._color import _ANSICOLOR
@@ -18,7 +19,8 @@ config = DoreahConfig("logging",
 	logfolder="logs",
 	timeformat="%Y/%m/%d %H:%M:%S",
 	defaultmodule="main",
-	verbosity=0
+	verbosity=0,
+	maxsize=16384
 )
 
 
@@ -78,6 +80,7 @@ def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 		with gopen(logfilename,"a") as logfile:
 			for msg in entries:
 				logfile.write(now + "  " + prefix + msg + "\n")
+		trim(logfilename)
 
 
 def flush():
@@ -93,8 +96,17 @@ def flush():
 		#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
 		with gopen(logfilename,"a") as logfile:
 			logfile.write(entry["time"] + "  " + entry["prefix"] + entry["msg"] + "\n")
+		trim(logfilename)
 
 	_queue = []
+
+def trim(filename):
+	while os.path.getsize(filename) > config["maxsize"]:
+		with open(filename,"r") as sourcefile:
+			sourcefile.readline()
+			with open(filename + ".new","w") as targetfile:
+				shutil.copyfileobj(sourcefile,targetfile)
+		shutil.move(filename + ".new",filename)
 
 # Quicker way to add header
 def logh1(*args,**kwargs):

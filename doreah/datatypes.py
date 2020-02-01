@@ -88,9 +88,9 @@ class DictStack:
 
 
 	def newlayer(self,*args,**kwargs):
-		return DictStackLayer(stack=self,height=self.height,dict=dict(*args,**kwargs))
+		return _DictStackContext(stack=self,height=self.height,dict=dict(*args,**kwargs))
 
-class DictStackLayer:
+class _DictStackContext:
 
 	def __init__(self,stack,height,dict):
 		self.stack = stack
