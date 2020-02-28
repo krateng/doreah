@@ -10,14 +10,18 @@ config = DoreahConfig("io",
 
 
 
-def ask(msg,default=True,repeat=False):
+def ask(msg,default=True,repeat=False,skip=False):
 	"""Offers a prompt that the user may answer with yes or no.
 
 	:param string msg: The prompt message
 	:param boolean default: Which response (True/False) should be assumed if none is given. Can be set no None to not accept implicit answers.
 	:param boolean repeat: Whether the prompt should be repeated until a valid response is acquired. Otherwise, will return None.
+	:param boolean skip: Literally just skips the whole thing and returns default anyway.
 	:return: Boolean value of the user's choice, or None if invalid response
 	"""
+	
+	if skip: return default
+	
 	if default is None:
 		a = "[y/n]"
 	elif default:
@@ -40,6 +44,41 @@ def ask(msg,default=True,repeat=False):
 			return ask(msg,default,repeat)
 		else:
 			return None
+			
+def prompt(msg,types=(str,),default=None,repeat=False,skip=False):
+	"""Offers a prompt that allows custom input.
+	
+	:param string msg: The prompt message
+	:param types: Accepted response types in order of priority
+	:param default: Response that should be assumed if no input is given.
+	:param boolean repeat: Whether the prompt should be repeated until a valid response is acquired. Otherwise, will return None.
+	:param boolean skip: Literally just skips the whole thing and returns default anyway.
+	:return: User's choice, or None if invalid response and no default
+	"""
+	
+	if skip: return default
+	
+	print(msg)
+	
+	inp = input()
+	
+	if inp != "":
+		for t in types:
+			try:
+				return t(inp)
+			except:
+				pass
+		print("Not a valid response")
+		if repeat:
+			return prompt(msg,types=types,default=default,repeat=repeat)
+		else:
+			return default
+	
+	elif inp == "":
+		if repeat and default is None:
+			return prompt(msg,types=types,default=default,repeat=repeat)
+		else:
+			return default
 
 
 def ellipsis(txt,length,padded=False):
