@@ -8,7 +8,8 @@ config = DoreahConfig("settings",
 	files=["settings.ini","settings.conf","configuration.ini","configuration.conf"],
 	comment=["#"],
 	category=("[","]"),
-	onlytext=False
+	onlytext=False,
+	environ_prefix=None
 )
 
 
@@ -65,16 +66,18 @@ def _interpret(text):
 # get settings
 # keys			list of requested keys. if present, will return list of according values, if not, will return dict of key-value pairs
 # files			which files to parse. later files (higher indicies) will overload earlier ones
+# environ_prefix	check environment variables with this prefix first
 # prefix		only request keys with a certain prefix. key filter will still be applied if present
 # cut_prefix	return keys without the prefix
 # category		return only keys of specific category
 # raw			do not interpret data type, only return strings
-@defaultarguments(config,files="files")
-def get_settings(*keys,files=DEFAULT,prefix="",cut_prefix=False,category=None,raw=False):
+@defaultarguments(config,files="files",environ_prefix="environ_prefix")
+def get_settings(*keys,files=DEFAULT,environ_prefix=DEFAULT,prefix="",cut_prefix=False,category=None,raw=False):
 	"""Get the active settings value for all supplied keys. Get a dict of all settings (or only filtered) if no keys are supplied.
 
 	:param string keys: Setting keys to be read
 	:param list files: List of settings files from least to most authorative
+	:param string environ_prefix: Check environment variables with this prefix
 	:param string prefix: Only return settings keys beginning with this string
 	:param boolean cut_prefix: Drop specified prefix from key names
 	:param string category: Only return settings of this category
@@ -129,6 +132,16 @@ def get_settings(*keys,files=DEFAULT,prefix="",cut_prefix=False,category=None,ra
 				# return full keys
 				else:
 					allsettings[key] = val
+					
+	
+	# environment variables
+	if environ_prefix is not None:
+		v = os.environ
+		for key in v:
+			if key.startswith(environ_prefix):
+				val = v[key]
+				key = key[len(environ_prefix):]
+				allsettings[key] = val
 
 	# no arguments means all settings
 	if len(keys) == 0:
