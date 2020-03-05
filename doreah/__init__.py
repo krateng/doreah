@@ -1,34 +1,14 @@
-name = "doreah"
-version = 1,5,4
-versionstr = ".".join(str(n) for n in version)
-desc = "Small toolkit of utilities for python projects"
-author = {
-	"name": "Johannes Krattenmacher",
-	"email": "python@krateng.dev",
-	"github": "krateng"
-}
-requires = [
-	"lxml",
-	"mechanicalsoup",
-	"requests",
-	"pyyaml",
-	"beautifulsoup4"
-]
-resources = [
-	'res/login.pyhp'
-]
-
-commands = {
-	"pyhpserver":"pyhp2:run_testserver"
-}
-
 
 __all__ = [
 	"auth",
 	"caching",
+	"control",
 	"database",
+	"datatypes",
+	"filesystem",
 	"io",
 	"logging",
+	"packageutils",
 	"persistence",
 	"pyhp",
 	"regular",

@@ -1,39 +1,47 @@
 import setuptools
 import importlib
 
-module = importlib.import_module(setuptools.find_packages()[0])
+packagename = "doreah"
+
+module = importlib.import_module(packagename)
+pkginfo = importlib.import_module(".__pkginfo__",package=packagename)
+
+try:
+	ghname = pkginfo.links["github"]
+except:
+	ghname = pkginfo.name
 
 with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(
-    name=module.name,
-    version=".".join(str(n) for n in module.version),
-    author=module.author["name"],
-    author_email=module.author["email"],
-    description=module.desc,
+    name=pkginfo.name,
+    version=".".join(str(n) for n in pkginfo.version),
+    author=pkginfo.author["name"],
+    author_email=pkginfo.author["email"],
+    description=pkginfo.desc,
 	license="GPLv3",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/" + module.author["github"] + "/" + module.name,
-    packages=setuptools.find_packages(),
+    url="https://github.com/" + pkginfo.author["github"] + "/" + ghname,
+    packages=[packagename],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
         "Operating System :: OS Independent",
     ],
 	python_requires=">=3.5",
-	install_requires=module.requires,
-	package_data={'': module.resources},
+	install_requires=pkginfo.requires,
+	package_data={'': pkginfo.resources},
 	include_package_data=True,
 	entry_points = {
 		"console_scripts":[
-			cmd + " = " + module.name + "." + module.commands[cmd]
-			for cmd in module.commands
+			cmd + " = " + pkginfo.name + "." + pkginfo.commands[cmd]
+			for cmd in pkginfo.commands
 		]
 	}
 )
 
 
 import os
-os.system("git tag v" + ".".join(str(n) for n in module.version))
+os.system("git tag v" + ".".join(str(n) for n in pkginfo.version))

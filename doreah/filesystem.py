@@ -31,3 +31,13 @@ class FileWrapper:
 
 	def open(self,mode="r"):
 		return open(self.pth,mode)
+
+class RelativePath:
+	def __init__(relpath,root=None):
+		if root is None: root = os.curdir
+		self.pth = os.path.join(root,relpath)
+		self.root = root
+		self.relpath = relpath
+
+class RelativeFile(RelativePath,FileWrapper):
+	pass
