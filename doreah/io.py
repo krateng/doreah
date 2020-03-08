@@ -19,9 +19,9 @@ def ask(msg,default=True,repeat=False,skip=False):
 	:param boolean skip: Literally just skips the whole thing and returns default anyway.
 	:return: Boolean value of the user's choice, or None if invalid response
 	"""
-	
+
 	if skip: return default
-	
+
 	if default is None:
 		a = "[y/n]"
 	elif default:
@@ -44,10 +44,10 @@ def ask(msg,default=True,repeat=False,skip=False):
 			return ask(msg,default,repeat)
 		else:
 			return None
-			
+
 def prompt(msg,types=(str,),default=None,repeat=False,skip=False):
 	"""Offers a prompt that allows custom input.
-	
+
 	:param string msg: The prompt message
 	:param types: Accepted response types in order of priority
 	:param default: Response that should be assumed if no input is given.
@@ -55,13 +55,13 @@ def prompt(msg,types=(str,),default=None,repeat=False,skip=False):
 	:param boolean skip: Literally just skips the whole thing and returns default anyway.
 	:return: User's choice, or None if invalid response and no default
 	"""
-	
+
 	if skip: return default
-	
+
 	print(msg)
-	
+
 	inp = input()
-	
+
 	if inp != "":
 		for t in types:
 			try:
@@ -73,7 +73,7 @@ def prompt(msg,types=(str,),default=None,repeat=False,skip=False):
 			return prompt(msg,types=types,default=default,repeat=repeat)
 		else:
 			return default
-	
+
 	elif inp == "":
 		if repeat and default is None:
 			return prompt(msg,types=types,default=default,repeat=repeat)
@@ -97,7 +97,7 @@ class _Col:
 	def __getitem__(self, color):
 		def colored(txt,color=color):
 			pre,post = _ANSICOLOR(color)
-			return pre + txt + post
+			return pre + str(txt) + post
 
 		return colored
 col = _Col()
