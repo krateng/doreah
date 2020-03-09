@@ -30,6 +30,9 @@ class FileWrapper:
 	def ext(self):
 		return self.pth.split(".")[-1].lower()
 
+	def remove(self):
+		os.remove(self.pth)
+
 ###
 # These don't technically represent relative paths, but absolute paths with
 # context information about what they're relative to
@@ -56,9 +59,10 @@ class RelativePath:
 		shutil.copytree(self.pth,target)
 
 class RelativeFile(RelativePath,FileWrapper):
-	def copyinto(self,targetdir):
+	def copyinto(self,targetdir,rename=None):
 		target = os.path.join(targetdir.fullpath,self.relpath)
 		os.makedirs(os.path.dirname(target),exist_ok=True)
+		if rename is not None: target = os.path.join(os.path.dirname(target),rename)
 		shutil.copy(self.pth,target)
 
 
@@ -88,7 +92,15 @@ class Directory:
 				self.folderdict[e] = RelativeFile(e,root=self.fullpath)
 
 	def __getitem__(self,node):
-		return self.folderdict[node]
+		try:
+			return self.folderdict[node]
+		except:
+			os.makedirs(os.path.join(self.fullpath,node))
+			self.folderdict[node] = {}
+			return self.folderdict[node]
+
+	def relfile(self,relpath):
+		return RelativeFile(relpath=relpath,root=self.fullpath)
 
 
 	# returns all files in this directory tree relative to it
