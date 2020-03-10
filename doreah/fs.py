@@ -9,9 +9,6 @@ import os
 import shutil
 import math
 
-class FileWrapper:
-	pass
-
 
 # ABC
 
@@ -29,6 +26,9 @@ class AbstractDirectory(AbstractPath):
 		#return self.__class__(self.path + pth.path)
 		res = combines[(type(self),type(pth))]
 		return res(self.path + pth.path)
+
+	def __add__(self, other):
+		return self.mount(other)
 
 	def join(self,pth):
 		return os.path.join(self.__path__(),pth)
@@ -51,6 +51,9 @@ class AbsolutePath(AbstractPath):
 
 	def __path__(self):
 		return os.path.join("/",*self.path)
+
+	def exists(self):
+		return os.path.exists(self.__path__())
 
 
 class AbsoluteDirectory(AbstractDirectory,AbsolutePath):
@@ -76,6 +79,7 @@ class AbsoluteDirectory(AbstractDirectory,AbsolutePath):
 				yield RelativeDirectory(e)
 
 	def all_files_relative(self,maxdepth=math.inf):
+		"""Returns all files inside this directory, relative to it"""
 		if maxdepth == 0: return
 		for f in self.files():
 			yield f
@@ -83,10 +87,23 @@ class AbsoluteDirectory(AbstractDirectory,AbsolutePath):
 			for ff in self.mount(f).all_files_relative(maxdepth=maxdepth-1):
 				yield f.mount(ff)
 
+	def copyto(self,trgt):
+		"""Copies this directory to the target directory"""
+		shutil.copytree(self.__path__(),trgt.__path__())
+
+	def copypath(self,relpth,targetdir):
+		"""Copies the given relative path from this directory to the target directory, preserving the full path"""
+		src = self.mount(relpth)
+		trgt = targetdir.mount(relpth)
+		src.copyto(trgt)
+
+
 
 class AbsoluteFile(AbstractFile,AbsolutePath):
 	IS_IN = AbsoluteDirectory
-	pass
+
+	def copyto(self,trgt):
+		shutil.copy(self.__path__(),trgt.__path__())
 
 
 # RELATIVE
