@@ -1,5 +1,7 @@
 import os
 import shutil
+import yaml
+import random
 
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
 
@@ -132,8 +134,8 @@ def get_settings(*keys,files=DEFAULT,environ_prefix=DEFAULT,prefix="",cut_prefix
 				# return full keys
 				else:
 					allsettings[key] = val
-					
-	
+
+
 	# environment variables
 	if environ_prefix is not None:
 		v = os.environ
@@ -230,3 +232,32 @@ def update(source="default_settings.ini",target="settings.ini"):
 		usersettings = get_settings(files=[target],raw=True)
 		shutil.copyfile(source,target)
 		update_settings(target,usersettings)
+
+
+
+
+class YAMLBackedConfig(dict):
+	def __init__(self,file="conf.yml",defaults={},reload_every=25):
+		self.file = file
+		self.reload_every = reload_every
+		super().__init__(defaults)
+		if os.path.exists(self.file):
+			self.loadfromdisk()
+
+		with open(self.file,"w") as df:
+			yaml.dump(self.tonormaldict(),df)
+
+	def loadfromdisk(self):
+		with open(self.file) as df:
+			d = yaml.safe_load(df)
+			if d is not None:
+				self.update(d)
+
+	def tonormaldict(self):
+		return {k:self[k] for k in self}
+
+	def __getitem__(self,key):
+		if key not in self or random.choice(range(0,self.reload_every)) == 0:
+			self.loadfromdisk()
+
+		return super().__getitem__(key)

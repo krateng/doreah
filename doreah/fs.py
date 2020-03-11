@@ -89,6 +89,7 @@ class AbsoluteDirectory(AbstractDirectory,AbsolutePath):
 
 	def copyto(self,trgt):
 		"""Copies this directory to the target directory"""
+		assert not os.path.exists(trgt.__path__())
 		shutil.copytree(self.__path__(),trgt.__path__())
 
 	def copypath(self,relpth,targetdir):
@@ -103,7 +104,11 @@ class AbsoluteFile(AbstractFile,AbsolutePath):
 	IS_IN = AbsoluteDirectory
 
 	def copyto(self,trgt):
+		assert not os.path.exists(trgt.__path__())
 		shutil.copy(self.__path__(),trgt.__path__())
+
+	def open(self,mode="r"):
+		return open(self.__path__(),mode=mode)
 
 
 # RELATIVE

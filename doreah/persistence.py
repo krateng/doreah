@@ -3,6 +3,8 @@ import os
 import math
 import zlib
 import random
+import yaml
+import shutil
 
 from ._internal import DEFAULT, defaultarguments, gopen, DoreahConfig
 
@@ -181,3 +183,30 @@ class DiskDict:
 
 		name = str(random.uniform(1000000000,9999999999)).replace(".","")
 		save((key,value),os.path.join(self.name,hashvalue,name),folder=self.folder)
+
+
+
+class YAMLDict(dict):
+
+	def __init__(self,filename,d={},update_every_nth_change=10):
+		self.filename = filename
+		self.freq = update_every_nth_change
+		super().__init__(d)
+		if os.path.exists(self.filename):
+			with open(self.filename) as df:
+				self.update(yaml.safe_load(df))
+
+		self.savetodisk()
+
+	def __setitem__(self,key,value):
+		super().__setitem__(key,value)
+		if random.choice(range(0,self.freq)) == 0:
+			self.savetodisk()
+
+	def savetodisk(self):
+		with open(self.filename + ".tmp","w") as df:
+			yaml.dump(self.tonormaldict(),df)
+		shutil.move(self.filename + ".tmp",self.filename)
+
+	def tonormaldict(self):
+		return {k:self[k] for k in self}

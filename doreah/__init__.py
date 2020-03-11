@@ -6,6 +6,7 @@ __all__ = [
 	"database",
 	"datatypes",
 	"filesystem",
+	"fs",
 	"io",
 	"logging",
 	"packageutils",
