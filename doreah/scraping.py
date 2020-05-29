@@ -87,7 +87,9 @@ def parse(initial,steps):
 					elif steptype == "last":
 						result[k] = result[k].split(instruction)[-1]
 
+		if isinstance(result,lxml.etree._ElementUnicodeResult): result = str(result)
 		i += 1
+
 
 	return result
 

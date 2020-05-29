@@ -20,7 +20,7 @@ config = DoreahConfig("logging",
 	timeformat="%Y/%m/%d %H:%M:%S",
 	defaultmodule="main",
 	verbosity=0,
-	maxsize=16384
+	maxsize=16777220
 )
 
 
