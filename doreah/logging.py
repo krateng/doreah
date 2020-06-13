@@ -20,7 +20,7 @@ config = DoreahConfig("logging",
 	timeformat="%Y/%m/%d %H:%M:%S",
 	defaultmodule="main",
 	verbosity=0,
-	maxsize=16777220
+	maxsize=4194304
 )
 
 
@@ -75,12 +75,13 @@ def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 				print(colorprefix + "[" + module + "] " + prefix + msg + colorsuffix)
 
 		# file output
-		logfilename = config["logfolder"] + "/" + module + ".log"
-		#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
-		with gopen(logfilename,"a") as logfile:
-			for msg in entries:
-				logfile.write(now + "  " + prefix + msg + "\n")
-		trim(logfilename)
+		if config["logfolder"] is not None:
+			logfilename = config["logfolder"] + "/" + module + ".log"
+			#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
+			with gopen(logfilename,"a") as logfile:
+				for msg in entries:
+					logfile.write(now + "  " + prefix + msg + "\n")
+			trim(logfilename)
 
 
 def flush():
@@ -92,11 +93,12 @@ def flush():
 			print("[" + entry["module"] + "] " + entry["prefix"] + entry["msg"])
 
 		# file output
-		logfilename = config["logfolder"] + "/" + entry["module"] + ".log"
-		#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
-		with gopen(logfilename,"a") as logfile:
-			logfile.write(entry["time"] + "  " + entry["prefix"] + entry["msg"] + "\n")
-		trim(logfilename)
+		if config["logfolder"] is not None:
+			logfilename = config["logfolder"] + "/" + entry["module"] + ".log"
+			#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
+			with gopen(logfilename,"a") as logfile:
+				logfile.write(entry["time"] + "  " + entry["prefix"] + entry["msg"] + "\n")
+			trim(logfilename)
 
 	_queue = []
 
@@ -107,6 +109,7 @@ def trim(filename):
 			with open(filename + ".new","w") as targetfile:
 				shutil.copyfileobj(sourcefile,targetfile)
 		shutil.move(filename + ".new",filename)
+
 
 # Quicker way to add header
 def logh1(*args,**kwargs):
