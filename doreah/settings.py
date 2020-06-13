@@ -141,7 +141,7 @@ def get_settings(*keys,files=DEFAULT,environ_prefix=DEFAULT,prefix="",cut_prefix
 		v = os.environ
 		for key in v:
 			if key.startswith(environ_prefix):
-				val = v[key]
+				val = _interpret(v[key])
 				key = key[len(environ_prefix):]
 				allsettings[key] = val
 
