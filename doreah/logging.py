@@ -104,12 +104,8 @@ def flush():
 
 def trim(filename):
 	try:
-		while os.path.getsize(filename) > config["maxsize"]:
-			with open(filename,"r") as sourcefile:
-				sourcefile.readline()
-				with open(filename + ".new","w") as targetfile:
-					shutil.copyfileobj(sourcefile,targetfile)
-			shutil.move(filename + ".new",filename)
+		if os.path.getsize(filename) > config["maxsize"]:
+			os.replace(filename,filename + ".old")
 	except:
 		pass
 
