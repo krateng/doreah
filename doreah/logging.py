@@ -103,12 +103,15 @@ def flush():
 	_queue = []
 
 def trim(filename):
-	while os.path.getsize(filename) > config["maxsize"]:
-		with open(filename,"r") as sourcefile:
-			sourcefile.readline()
-			with open(filename + ".new","w") as targetfile:
-				shutil.copyfileobj(sourcefile,targetfile)
-		shutil.move(filename + ".new",filename)
+	try:
+		while os.path.getsize(filename) > config["maxsize"]:
+			with open(filename,"r") as sourcefile:
+				sourcefile.readline()
+				with open(filename + ".new","w") as targetfile:
+					shutil.copyfileobj(sourcefile,targetfile)
+			shutil.move(filename + ".new",filename)
+	except:
+		pass
 
 
 # Quicker way to add header
