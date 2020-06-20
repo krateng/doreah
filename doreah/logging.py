@@ -19,6 +19,7 @@ config = DoreahConfig("logging",
 	logfolder="logs",
 	timeformat="%Y/%m/%d %H:%M:%S",
 	defaultmodule="main",
+	only_leaf_module=True,
 	verbosity=0,
 	maxsize=4194304
 )
@@ -60,6 +61,7 @@ def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 		try:
 			module = inspect.getmodule(inspect.stack()[1][0])
 			module = getattr(module,"__logmodulename__",module.__name__)
+			if config["only_leaf_module"]: module = module.split(".")[-1]
 			if module == "__main__": module = config["defaultmodule"]
 		except:
 			module = "interpreter"
