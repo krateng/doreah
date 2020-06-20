@@ -1,7 +1,7 @@
 name = "doreah"
 desc = "Small toolkit of utilities for python projects"
 
-version = 1,6,5
+version = 1,6,6
 versionstr = ".".join(str(n) for n in version)
 
 author = {

@@ -103,9 +103,18 @@ def flush():
 	_queue = []
 
 def trim(filename):
+
 	try:
-		if os.path.getsize(filename) > config["maxsize"]:
-			os.replace(filename,filename + ".old")
+		#sanity check for old version logfiles
+		if os.path.getsize(filename) > config["maxsize"] * 4:
+			os.remove(filename)
+
+		elif os.path.getsize(filename) > config["maxsize"]:
+			with open(filename,"r") as sourcefile:
+				lines = sourcefile.readlines()
+				delete = int(len(lines)/2)
+			with open(filename,"w") as targetfile:
+				targetfile.writelines(lines[delete:])
 	except:
 		pass
 
