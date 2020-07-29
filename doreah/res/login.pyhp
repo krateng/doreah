@@ -82,7 +82,8 @@
 				console.log("Login!")
 				var token = res["token"];
 				document.cookie = res["cookie_name"] + "=" + token;
-				location.assign("/");
+				//location.assign("/");
+				location.reload();
 			}
 		}
 

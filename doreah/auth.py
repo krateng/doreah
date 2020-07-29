@@ -14,7 +14,8 @@ config = DoreahConfig("auth",
 	multiuser=True,
 	cookieprefix="doreahauth",
 	defaultpw="admin",
-	dbfile="authdb.ddb"
+	dbfile="authdb.ddb",
+	stylesheets=[]
 )
 
 
@@ -190,13 +191,14 @@ def authenticated(func):
 		if check(request):
 			return func(*args,**kwargs)
 		else:
-			redirect("/")
+			#redirect(config["loginurl"])
+			return get_login_page()
 
 	return newfunc
 
 
-def get_login_page(stylesheets=[]):
-	return pyhpfile(pkg_resources.resource_filename(__name__,"res/login.pyhp"),{"get_challenge":get_challenge,"css":stylesheets})
+def get_login_page():
+	return pyhpfile(pkg_resources.resource_filename(__name__,"res/login.pyhp"),{"get_challenge":get_challenge,"css":config["stylesheets"]})
 
 
 db.save()
