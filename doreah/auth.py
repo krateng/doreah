@@ -194,7 +194,52 @@ def authenticated(func):
 			#redirect(config["loginurl"])
 			return get_login_page()
 
+	newfunc.__annotations__ = func.__annotations__
 	return newfunc
+
+def authenticated_api(func):
+
+	def newfunc(*args,**kwargs):
+		if check(request):
+			return func(*args,**kwargs)
+		else:
+			bottleresponse.status = 403
+			return {"error":"Not allowed"}
+
+	newfunc.__annotations__ = func.__annotations__
+	return newfunc
+
+def authenticated_with_alternate(alt_func):
+
+	def decorator(func):
+
+		def newfunc(*args,**kwargs):
+			if alt_func(request) or check(request):
+				return func(*args,**kwargs)
+			else:
+				#redirect(config["loginurl"])
+				return get_login_page()
+
+		newfunc.__annotations__ = func.__annotations__
+		return newfunc
+
+	return decorator
+
+def authenticated_api_with_alternate(alt_func):
+
+	def decorator(func):
+
+		def newfunc(*args,**kwargs):
+			if alt_func(request) or check(request):
+				return func(*args,**kwargs)
+			else:
+				bottleresponse.status = 403
+				return {"error":"Not allowed"}
+
+		newfunc.__annotations__ = func.__annotations__
+		return newfunc
+
+	return decorator
 
 
 def get_login_page():
