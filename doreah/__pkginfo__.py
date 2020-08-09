@@ -15,10 +15,13 @@ requires = [
 	"mechanicalsoup",
 	"requests",
 	"pyyaml",
-	"beautifulsoup4"
+	"beautifulsoup4",
+	"jinja2>2.11"
 ]
 resources = [
-	'res/login.pyhp'
+	'res/*',
+	'res/*/*',
+	'res/*/*/*'
 ]
 
 commands = {

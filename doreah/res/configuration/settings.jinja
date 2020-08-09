@@ -1,0 +1,18 @@
+<html>
+	<head>
+
+	</head>
+	<body>
+		<table>
+		{% for s in configuration %}
+		<tr>
+			<td>{{ configuration.names[s] }}</td>
+			<td>
+				{{ configuration.types[s].html(default=configuration.defaults[s],user=configuration.user_overrides[s]) }}
+			</td>
+		</tr>
+		{% endfor %}
+		</table>
+
+	</body>
+</html>

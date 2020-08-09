@@ -2,27 +2,52 @@ from ._internal import DEFAULT, defaultarguments, DoreahConfig
 import math
 import string
 import re
-
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 config = DoreahConfig("configuration",
 )
 
 
-
+JINJAENV = Environment(
+	loader=PackageLoader('doreah', 'res/configuration'),
+	autoescape=select_autoescape(['html', 'xml'])
+)
 
 
 class Configuration:
+
 	def __init__(self,settings,configfiles=("settings.ini",)):
 		flatten = {key.lower():settings[category][key] for category in settings for key in settings[category]}
 		self.categories = {cat:[k for k in settings[cat]] for cat in settings}
 		self.types = {k:flatten[k][0] for k in flatten}
-		self.defaults = {k:flatten[k][1] for k in flatten}
-		self.expire = {k:flatten[k][2] if len(flatten[k])>2 else -1 for k in flatten}
+		self.names = {k:flatten[k][1] for k in flatten}
+		self.defaults = {k:flatten[k][2] for k in flatten}
+		self.expire = {k:flatten[k][3] if len(flatten[k])>3 else -1 for k in flatten}
 
 		self.configfiles = configfiles
 
 		self.user_overrides = {}
 		self.load_from_files()
+
+
+
+
+	def __getitem__(self,key):
+		if key in self.user_overrides: return self.user_overrides[key]
+		if key in self.defaults: return self.defaults[key]
+		return None
+
+	def __iter__(self):
+		return (k for k in self.defaults)
+
+	def todict(self):
+		d = {k:self.defaults[k] for k in self.defaults}
+		d.update(self.user_overrides)
+		return d
+
+	def html(self):
+		template = JINJAENV.get_template("settings.jinja")
+		return template.render({"configuration":self})
 
 	def load_from_files(self):
 		for f in self.configfiles:
@@ -48,7 +73,15 @@ class Configuration:
 # this is just a namespace, not a real class
 class types:
 
-	class Integer:
+	class SettingType:
+		def html(self,default,user):
+			template = JINJAENV.get_template(self.jinjafile())
+			return template.render({"type":self,"default":default,"user":user})
+
+		def jinjafile(self):
+			return "types/" + self.__class__.__name__ + ".jinja"
+
+	class Integer(SettingType):
 		regex = "[0-9]+"
 
 		def __init__(self,min=-math.inf,max=math.inf):
@@ -58,7 +91,7 @@ class types:
 		def validate(self,input):
 			return isinstance(input,int) and input >= self.min and input <= self.max
 
-	class String:
+	class String(SettingType):
 		regex = "([^'\"]*)"
 
 		def __init__(self,minlength=0,maxlength=math.inf):
@@ -74,14 +107,14 @@ class types:
 		def validate(self,input):
 			return isinstance(input,str) and len(input) >= self.minlength and len(input) <= self.maxlength
 
-	class Choice:
+	class Choice(SettingType):
 		def __init__(self,options=()):
 			self.options = options
 
 		def validate(self,input):
 			return input in self.options
 
-	class Set:
+	class Set(SettingType):
 		def __init__(self,type,minmembers=0,maxmembers=math.inf):
 			self.type = type
 			self.minmembers = minmembers
@@ -156,15 +189,23 @@ class formats:
 exampleconfig = Configuration(
 	settings={
 		"Group":{
-			"name":(types.String(),"Fellowship of the Ring"),
-			"employer":(types.String(),"Council of Elrond"),
-			"members":(types.Set(types.String()),["Gandalf","Aragorn","Boromir","Legolas","Gimli","Frodo","Samwise","Peregrin","Meriadoc"])
+			"name":(types.String(),					"Group Name",		"Fellowship of the Ring"),
+			"employer":(types.String(),				"Employer",			"Council of Elrond"),
+			"members":(types.Set(types.String()),	"Members",			["Gandalf","Aragorn","Boromir","Legolas","Gimli","Frodo","Samwise","Peregrin","Meriadoc"])
 		},
 		"Mission":{
-			"start":(types.String(),"Rivendell"),
-			"target":(types.String(),"Mount Doom"),
-			"timebudget":(types.Integer(),360)
+			"start":(types.String(),				"Start Point",		"Rivendell"),
+			"target":(types.String(),				"Target",			"Mount Doom"),
+			"timebudget":(types.Integer(min=4),		"Estimated Days",	360)
 		}
 	}
 
 )
+
+from bottle import run, get
+
+@get("/")
+def settingspage():
+	return exampleconfig.html()
+
+run(port=8080,server="waitress")
