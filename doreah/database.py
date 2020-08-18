@@ -231,9 +231,12 @@ class Database:
 					objd[var] = yamlify(getattr(obj,var))
 				d[cls.__name__].append(objd)
 
-		with open(self_db.file + ".tmp","w") as f:
+		tmpfile = self_db.file + ".tmp"
+		folder = os.path.dirname(tmpfile)
+		os.makedirs(folder,exist_ok=True)
+		with open(tmpfile,"w") as f:
 			yaml.dump(d,f)
-		os.replace(self_db.file + ".tmp",self_db.file)
+		os.replace(tmpfile,self_db.file)
 
 		print("Database saved to disk.")
 
