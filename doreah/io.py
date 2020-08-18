@@ -2,6 +2,7 @@ from ._internal import DEFAULT, defaultarguments, DoreahConfig
 from ._color import _ANSICOLOR
 
 import sys
+from getpass import getpass
 
 config = DoreahConfig("io",
 	yesvalues=["y","yes","yea","1","positive","true"],
@@ -45,7 +46,7 @@ def ask(msg,default=True,repeat=False,skip=False):
 		else:
 			return None
 
-def prompt(msg,types=(str,),default=None,repeat=False,skip=False):
+def prompt(msg,types=(str,),default=None,repeat=False,skip=False,secret=False):
 	"""Offers a prompt that allows custom input.
 
 	:param string msg: The prompt message
@@ -53,6 +54,7 @@ def prompt(msg,types=(str,),default=None,repeat=False,skip=False):
 	:param default: Response that should be assumed if no input is given.
 	:param boolean repeat: Whether the prompt should be repeated until a valid response is acquired. Otherwise, will return None.
 	:param boolean skip: Literally just skips the whole thing and returns default anyway.
+	:param boolean hide: Don't show user input (e.g. passwords)
 	:return: User's choice, or None if invalid response and no default
 	"""
 
@@ -60,7 +62,7 @@ def prompt(msg,types=(str,),default=None,repeat=False,skip=False):
 
 	print(msg)
 
-	inp = input()
+	inp = getpass("") if secret else input()
 
 	if inp != "":
 		for t in types:
@@ -70,13 +72,13 @@ def prompt(msg,types=(str,),default=None,repeat=False,skip=False):
 				pass
 		print("Not a valid response")
 		if repeat:
-			return prompt(msg,types=types,default=default,repeat=repeat)
+			return prompt(msg,types=types,default=default,repeat=repeat,secret=secret)
 		else:
 			return default
 
 	elif inp == "":
 		if repeat and default is None:
-			return prompt(msg,types=types,default=default,repeat=repeat)
+			return prompt(msg,types=types,default=default,repeat=repeat,secret=secret)
 		else:
 			return default
 

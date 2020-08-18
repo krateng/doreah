@@ -79,6 +79,11 @@ class User(db.DBObject):
 	username: str
 	pubkey: str
 
+	def checkpw(self,password):
+		pw = str.encode(password).hex()
+		pw1 = combine(hex(GENERATOR),pw)
+		pub = combine(pw1,COMMON)
+		return self.pubkey == pub
 
 	def setpw(self,password):
 		pw = str.encode(password).hex()
@@ -244,6 +249,8 @@ def authenticated_api_with_alternate(alt_func):
 
 def get_login_page():
 	return pyhpfile(pkg_resources.resource_filename(__name__,"res/login.pyhp"),{"get_challenge":get_challenge,"css":config["stylesheets"]})
+
+
 
 
 db.save()
