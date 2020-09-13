@@ -1,6 +1,6 @@
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
 from .database import Database, Ref
-from .pyhp2 import file as pyhpfile
+from .pyhp import file as pyhpfile
 
 import secrets
 import time

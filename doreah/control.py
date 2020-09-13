@@ -14,13 +14,16 @@ import signal
 config = DoreahConfig("control")
 
 
-def cmd_handle(shortcuts):
+def cmd_handle(shortcuts,flags):
 	cmd = sys.argv[1:]
 	args = []
 	kwargs = {}
 
 	while len(cmd) > 0:
-		if cmd[0].startswith("-") and cmd[0][1:] in shortcuts:
+		if cmd[0].startswith("--") and cmd[0][2:] in flags:
+			kwargs[cmd[0][2:]] = True
+			cmd = cmd[1:]
+		elif cmd[0].startswith("-") and cmd[0][1:] in shortcuts:
 			kwargs[shortcuts[cmd[0][1:]]] = cmd[1]
 			cmd = cmd[2:]
 		elif cmd[0].startswith("--"):
@@ -32,12 +35,12 @@ def cmd_handle(shortcuts):
 
 	return args,kwargs
 
-def mainfunction(shortcuts,shield=False):
+def mainfunction(shortcuts={},flags=[],shield=False):
 	def decorator(func):
 		# define a wrapper function that takes no args itself,
 		# but reads them from console and passes them down
 		def wrapper():
-			args,kwargs = cmd_handle(shortcuts)
+			args,kwargs = cmd_handle(shortcuts,flags)
 			for var in kwargs:
 				if var in func.__annotations__:
 					kwargs[var] = func.__annotations__[var](kwargs[var])
