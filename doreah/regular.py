@@ -9,7 +9,8 @@ _daily_funcs = []
 
 
 config = DoreahConfig("regular",
-	autostart=True
+	autostart=True,
+	offset=0
 )
 
 
@@ -47,6 +48,7 @@ def runyearly(func):
 		now = datetime.datetime.utcnow()
 		nextyear = datetime.datetime(now.year+1,1,1)
 		wait = nextyear.timestamp() - now.timestamp() + 5
+		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
@@ -67,6 +69,7 @@ def repeatyearly(func):
 		now = datetime.datetime.utcnow()
 		nextyear = datetime.datetime(now.year+1,1,1)
 		wait = nextyear.timestamp() - now.timestamp() + 5
+		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
@@ -86,6 +89,7 @@ def runmonthly(func):
 		now = datetime.datetime.utcnow()
 		nextmonth = datetime.datetime(now.year,now.month + 1,1) if now.month != 12 else datetime.datetime(now.year+1,1,1)
 		wait = nextmonth.timestamp() - now.timestamp() + 5
+		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
@@ -106,6 +110,7 @@ def repeatmonthly(func):
 		now = datetime.datetime.utcnow()
 		nextmonth = datetime.datetime(now.year,now.month + 1,1) if now.month != 12 else datetime.datetime(now.year+1,1,1)
 		wait = nextmonth.timestamp() - now.timestamp() + 5
+		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
@@ -125,6 +130,7 @@ def rundaily(func):
 		now = datetime.datetime.utcnow()
 		nextday = datetime.datetime(now.year,now.month,now.day) + datetime.timedelta(days=1)
 		wait = nextday.timestamp() - now.timestamp() + 5
+		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
@@ -145,6 +151,7 @@ def repeatdaily(func):
 		now = datetime.datetime.utcnow()
 		nextday = datetime.datetime(now.year,now.month,now.day) + datetime.timedelta(days=1)
 		wait = nextday.timestamp() - now.timestamp() + 5
+		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):

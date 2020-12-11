@@ -63,7 +63,7 @@ class Database:
 		del self.class_primary_keys[cls][primkey]
 
 	def __init__(self_db,file="database.ddb"):
-		print("Initializing database...")
+		#print("Initializing database...")
 		self_db.file = file
 
 		self_db.counter = 0
@@ -98,7 +98,7 @@ class Database:
 				self_db.class_to_objects[cls] = []
 				self_db.class_primary_keys[cls] = {}
 				cls.__primarykey__ = tuple()
-				print("New database class defined:",cls)
+				#print("New database class defined:",cls)
 
 
 				types = cls.__annotations__
@@ -238,7 +238,7 @@ class Database:
 			yaml.dump(d,f)
 		os.replace(tmpfile,self_db.file)
 
-		print("Database saved to disk.")
+		#print("Database saved to disk.")
 
 
 	def load(self_db):
@@ -246,11 +246,12 @@ class Database:
 			with open(self_db.file,"r") as f:
 				self_db.loadarea = yaml.safe_load(f)
 				# temporary storage until proper classes are defined
-			print("Database loaded into memory.")
+			#print("Database loaded into memory.")
 			self_db.counter = max([0] + [obj["uid"] for cls in self_db.loadarea for obj in self_db.loadarea[cls]])
 			self_db.inject()
 		except:
-			print("No existing database found.")
+			#print("No existing database found.")
+			pass
 
 
 
