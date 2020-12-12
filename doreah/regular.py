@@ -13,6 +13,9 @@ config = DoreahConfig("regular",
 	offset=0
 )
 
+def tz():
+	return datetime.timezone(offset=datetime.timedelta(hours=config["offset"]))
+
 
 def yearly(func):
 	"""Decorator for yearly functions. Depending on configuration, is equivalent to either :meth:`runyearly` or :meth:`repeatyearly`."""
@@ -45,10 +48,9 @@ def runyearly(func):
 		func()
 
 		# schedule next execution
-		now = datetime.datetime.utcnow()
-		nextyear = datetime.datetime(now.year+1,1,1)
+		now = datetime.datetime.now(tz=tz())
+		nextyear = datetime.datetime(now.year+1,1,1,tzinfo=tz())
 		wait = nextyear.timestamp() - now.timestamp() + 5
-		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
@@ -66,10 +68,9 @@ def repeatyearly(func):
 		func(*args,**kwargs)
 
 		# schedule next execution
-		now = datetime.datetime.utcnow()
-		nextyear = datetime.datetime(now.year+1,1,1)
+		now = datetime.datetime.now(tz=tz())
+		nextyear = datetime.datetime(now.year+1,1,1,tzinfo=tz())
 		wait = nextyear.timestamp() - now.timestamp() + 5
-		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
@@ -86,10 +87,9 @@ def runmonthly(func):
 		func()
 
 		# schedule next execution
-		now = datetime.datetime.utcnow()
-		nextmonth = datetime.datetime(now.year,now.month + 1,1) if now.month != 12 else datetime.datetime(now.year+1,1,1)
-		wait = nextmonth.timestamp() - now.timestamp() + 5
-		wait -= (config["offset"] * 3600)
+		now = datetime.datetime.now(tz=tz())
+		nextmonth = datetime.datetime(now.year,now.month + 1,1,tzinfo=tz()) if now.month != 12 else datetime.datetime(now.year+1,1,1,tzinfo=tz())
+		wait = nextyear.timestamp() - now.timestamp() + 5
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
@@ -107,10 +107,9 @@ def repeatmonthly(func):
 		func(*args,**kwargs)
 
 		# schedule next execution
-		now = datetime.datetime.utcnow()
-		nextmonth = datetime.datetime(now.year,now.month + 1,1) if now.month != 12 else datetime.datetime(now.year+1,1,1)
-		wait = nextmonth.timestamp() - now.timestamp() + 5
-		wait -= (config["offset"] * 3600)
+		now = datetime.datetime.now(tz=tz())
+		nextmonth = datetime.datetime(now.year,now.month + 1,1,tzinfo=tz()) if now.month != 12 else datetime.datetime(now.year+1,1,1,tzinfo=tz())
+		wait = nextyear.timestamp() - now.timestamp() + 5
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
@@ -127,10 +126,9 @@ def rundaily(func):
 		func()
 
 		# schedule next execution
-		now = datetime.datetime.utcnow()
-		nextday = datetime.datetime(now.year,now.month,now.day) + datetime.timedelta(days=1)
+		now = datetime.datetime.now(tz=tz())
+		nextday = datetime.datetime(now.year,now.month,now.day,tzinfo=tz()) + datetime.timedelta(days=1)
 		wait = nextday.timestamp() - now.timestamp() + 5
-		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func).start()
 
 	# now execute it for the first time
@@ -148,10 +146,9 @@ def repeatdaily(func):
 		func(*args,**kwargs)
 
 		# schedule next execution
-		now = datetime.datetime.utcnow()
-		nextday = datetime.datetime(now.year,now.month,now.day) + datetime.timedelta(days=1)
+		now = datetime.datetime.now(tz=tz())
+		nextday = datetime.datetime(now.year,now.month,now.day,tzinfo=tz()) + datetime.timedelta(days=1)
 		wait = nextday.timestamp() - now.timestamp() + 5
-		wait -= (config["offset"] * 3600)
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
