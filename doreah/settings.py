@@ -44,7 +44,7 @@ def _interpret(text):
 				stringended = True
 				buffer += "'"
 			elif c == "," and string is None:
-				list.append(buffer)
+				list.append(buffer.strip())
 				buffer = ""
 				stringended = False
 			else: buffer += c
