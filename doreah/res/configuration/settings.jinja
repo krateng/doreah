@@ -1,9 +1,13 @@
 
 <form id="doreah_config_form">
+
 <table>
 {% for cat in configuration.categories %}
 
-<tr><td><h3>{{ cat }}</h3></td><td></td></tr>
+<tr>
+	<td><h3>{{ cat }}</h3></td>
+	<td></td>
+</tr>
 {% for key in configuration.categories[cat] %}
 
 {% set datatype = configuration.types[key] %}
@@ -32,7 +36,6 @@
 			settings1[e[0]] = e[1];
 		}
 		console.log(settings1);
-		console.log("{{ configuration.save_endpoint }}")
 		fetch(
 			"{{ configuration.save_endpoint }}",
 			{

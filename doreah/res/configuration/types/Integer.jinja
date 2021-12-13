@@ -1,8 +1,8 @@
 <input
+	form="doreah_config_form"
 	type="number"
-	min="{{ type.min }}"
-	max="{{ type.max }}"
+	{# min="{{ type.min }}"	max="{{ type.max }}" #}
 	step="1"
 	placeholder="{{ default }}"
-	value="{{ user }}"
+	{% if user %}value="{{ user }}"{% endif %}
 	onchange="saveChanges()" />

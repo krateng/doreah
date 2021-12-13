@@ -81,6 +81,7 @@ class Configuration:
 			formats.loaders[ext].write_file(self.configfile,self.usersettings)
 		except:
 			print("Could not write file",self.configfile)
+			raise
 
 # this is just a namespace, not a real class
 class types:
@@ -91,9 +92,6 @@ class types:
 
 		def html(self,active,default,user,setting):
 			template = JINJAENV.get_template(self.jinjafile())
-			if active is None: active = ""
-			if default is None: default = ""
-			if user is None: user = ""
 			return template.render({"type":self,"active":active,"default":default,"user":user,"setting":setting})
 
 		def jinjafile(self):
@@ -167,8 +165,14 @@ class types:
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
 
 	class Boolean(SettingType):
-		def validate(self,input):
-			return True
+		default = False
+
+		def sanitize(self,input):
+			if input.lower() == "on":
+				return True
+			if input.lower() == "off":
+				return False
+			return input
 
 
 class formats:
@@ -240,7 +244,8 @@ class formats:
 		def data_to_text(self,data):
 			lines = []
 			for k in data:
-				lines.append(k + " = " + data[k])
+				lines.append(k + " = " + str(data[k]))
+			lines.append("")
 
 			return "\n".join(lines)
 
