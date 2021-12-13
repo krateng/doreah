@@ -1,0 +1,5 @@
+{% if active %}
+	<input type="checkbox" name="{{ setting }}" checked onchange="saveChanges()" />
+{% else %}
+	<input type="checkbox" name="{{ setting }}" onchange="saveChanges()" />
+{% endif %}

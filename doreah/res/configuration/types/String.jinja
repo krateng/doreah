@@ -1,1 +1,7 @@
-<input type="text" maxlength="{{ type.maxlength }}" placeholder="{{ default }}" value="{{ user }}"></input>
+<input
+	type="text"
+	name="{{ setting }}"
+	maxlength="{{ type.maxlength }}"
+	placeholder="{{ default }}"
+	value="{{ user }}"
+	onchange="saveChanges()" />

@@ -1,18 +1,55 @@
-<html>
-	<head>
 
-	</head>
-	<body>
-		<table>
-		{% for s in configuration %}
-		<tr>
-			<td>{{ configuration.names[s] }}</td>
-			<td>
-				{{ configuration.types[s].html(default=configuration.defaults[s],user=configuration.user_overrides[s]) }}
-			</td>
-		</tr>
-		{% endfor %}
-		</table>
+<form id="doreah_config_form">
+<table>
+{% for cat in configuration.categories %}
 
-	</body>
-</html>
+<tr><td><h3>{{ cat }}</h3></td><td></td></tr>
+{% for key in configuration.categories[cat] %}
+
+{% set datatype = configuration.types[key] %}
+{% set default_value = configuration.get_default(key) %}
+{% set user_value = configuration.get_user(key) %}
+{% set active_value = configuration.get_active(key) %}
+<tr>
+	<td>{{ configuration.names[key] }}</td>
+	<td class="doreah_config_setting" data-setting_key="{{ key }}">
+		{{ datatype.html(active=active_value,default=default_value,user=user_value,setting=key) }}
+	</td>
+</tr>
+{% endfor %}
+
+{% endfor %}
+
+</table>
+</form>
+
+<script>
+	function saveChanges() {
+		var form = document.getElementById("doreah_config_form");
+		var formdata = new FormData(form);
+		settings1 = {};
+		for (e of formdata.entries()) {
+			settings1[e[0]] = e[1];
+		}
+		console.log(settings1);
+		console.log("{{ configuration.save_endpoint }}")
+		fetch(
+			"{{ configuration.save_endpoint }}",
+			{
+				'method':'POST',
+				'body':JSON.stringify(settings1),
+				'headers': {
+					'Content-Type': 'application/json'
+				}
+			}
+		);
+
+
+	//	var cells = document.getElementsByClassName("doreah_config_setting");
+	//	var settings2 = {}
+	//	for (var c of cells) {
+	//		settings2[c.dataset['setting_key']] = 0;
+	//	}
+	//	console.log(settings2);
+	}
+</script>

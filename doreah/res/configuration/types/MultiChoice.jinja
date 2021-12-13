@@ -1,0 +1,5 @@
+{% for opt in type.options %}
+{% set name = type.options[opt] %}
+	<input type="checkbox" name="{{ setting }}" id="option_{{ setting }}_{{ opt }}" value="{{ opt }}" onchange="saveChanges()" />
+	<label for="option_{{ setting }}_{{ opt }}">{{ name }}</label>
+{% endfor %}

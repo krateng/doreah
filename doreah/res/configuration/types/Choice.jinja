@@ -1,0 +1,10 @@
+{% for opt in type.options %}
+	{% set name = type.options[opt] %}
+	{% if active == opt %}
+		<input type="radio" name="{{ setting }}" id="option_{{ setting }}_{{ opt }}" value="{{ opt }}" checked onchange="saveChanges()" />
+	{% else %}
+		<input type="radio" name="{{ setting }}" id="option_{{ setting }}_{{ opt }}" value="{{ opt }}" onchange="saveChanges()" />
+	{% endif %}
+
+	<label for="option_{{ setting }}_{{ opt }}">{{ name }}</label>
+{% endfor %}

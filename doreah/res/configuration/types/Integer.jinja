@@ -1,1 +1,8 @@
-<input type="number" min="{{ type.min }}" max="{{ type.max }}" placeholder="{{ default }}"></input>
+<input
+	type="number"
+	min="{{ type.min }}"
+	max="{{ type.max }}"
+	step="1"
+	placeholder="{{ default }}"
+	value="{{ user }}"
+	onchange="saveChanges()" />
