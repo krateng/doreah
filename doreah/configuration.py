@@ -57,6 +57,9 @@ class Configuration:
 		return self.usersettings.get(key.lower(),self.defaults.get(key.lower()))
 
 	def __getitem__(self,key):
+		# special case to support easier transition from settings module
+		if isinstance(key,tuple):
+			return (self[k] for k in key)
 		return self.get_active(key)
 		#if key in self.usersettings: return self.usersettings[key]
 		#if key in self.defaults: return self.defaults[key]
@@ -85,7 +88,7 @@ class Configuration:
 			settings = {k.lower():settings[k] for k in settings}
 			settings = {
 				k:settings[k] for k in settings if
-				k in self.types and self.types[k].validate(settings[k])
+				k in self.types and (self.types[k].validate(settings[k]) or settings[k] is False)
 			}
 			self.usersettings = settings
 		except:
@@ -124,7 +127,7 @@ class types:
 			return "types/" + self.__class__.__name__ + ".jinja"
 
 		def sanitize(self,input):
-			if self.validate(input):
+			if self.validate(input) or input is False: # False is always allowed
 				return input
 			else:
 				return self.default
@@ -150,16 +153,15 @@ class types:
 		regex = "([^'\"]*)"
 		default = ""
 
-		def __init__(self,minlength=0,maxlength=math.inf,allow_false=True):
+		def __init__(self,minlength=0,maxlength=math.inf):
 			self.minlength = minlength
 			self.maxlength = maxlength
-			self.allow_false = allow_false
 
 		def __desc__(self):
 			return "String"
 
 		def validate(self,input):
-			return (self.allow_false and input is False) or isinstance(input,str) and len(input) >= self.minlength and len(input) <= self.maxlength
+			return isinstance(input,str) and len(input) >= self.minlength and len(input) <= self.maxlength
 
 		def html_value(self,value):
 			if value in [None,False]: return ""
@@ -316,32 +318,3 @@ class formats:
 		"json":JSONHandler(),
 		"ini":INIHandler()
 	}
-
-def test():
-	exampleconfig = Configuration(
-		settings={
-			"Group":{
-				"name":(types.String(),					"Group Name",		"Fellowship of the Ring"),
-				"employer":(types.String(),				"Employer",			"Council of Elrond"),
-				"members":(types.Set(types.String()),	"Members",			["Gandalf","Aragorn","Boromir","Legolas","Gimli","Frodo","Samwise","Peregrin","Meriadoc"])
-			},
-			"Mission":{
-				"start":(types.String(),				"Start Point",		"Rivendell"),
-				"target":(types.String(),				"Target",			"Mount Doom"),
-				"timebudget":(types.Integer(min=4),		"Estimated Days",	360)
-			}
-		}
-
-	)
-
-	print(exampleconfig.usersettings)
-	from bottle import run, get
-
-	@get("/")
-	def settingspage():
-		return exampleconfig.html()
-
-	#run(port=8080,server="waitress")
-
-if __name__ == "__main__":
-	test()
