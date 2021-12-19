@@ -4,6 +4,15 @@ import string
 import re
 from jinja2 import Environment, PackageLoader, select_autoescape
 
+## for these configuration objects:
+## 		NONE always is equivalent to the setting not being specified - i.e. fallback to default
+##		FALSE can be used as a sentinel regardless of type
+##
+##		parsing and conversion of values should be done client-side. the server only checks if valid and rejects if not
+
+
+
+
 config = DoreahConfig("configuration",
 )
 
@@ -17,38 +26,45 @@ JINJAENV = Environment(
 class Configuration:
 
 
-	def __init__(self,settings,configfile="settings.ini",save_endpoint="/settings"):
+	def __init__(self,settings,configfile="settings.ini",save_endpoint="/settings",env_prefix="DOREAH_"):
 		flatten = {key.lower():settings[category][key] for category in settings for key in settings[category]}
 		self.categories = {cat:[k for k in settings[cat]] for cat in settings}
 		self.types = {k:flatten[k][0] for k in flatten}
 		self.names = {k:flatten[k][1] for k in flatten}
 		self.defaults = {k:flatten[k][2] for k in flatten}
+		self.descs = {k:flatten[k][3] for k in flatten if len(flatten[k]) > 3}
 		self.usersettings = {}
 		#self.expire = {k:flatten[k][3] if len(flatten[k])>3 else -1 for k in flatten}
 
 		self.configfile = configfile
 		self.save_endpoint = save_endpoint
+		self.env_prefix = env_prefix
 
 		self.load_from_file()
 
 	def update(self,settings):
 		for k in settings:
-			settings[k] = self.types[k].sanitize(settings[k])
-		self.usersettings.update(settings)
+			if settings[k] is None: del self.usersettings[k]
+			else: self.usersettings[k] = self.types[k].sanitize(settings[k])
 		self.write_to_file()
 
+
 	def get_user(self,key):
-		return self.usersettings.get(key)
+		return self.usersettings.get(key.lower())
 	def get_default(self,key):
-		return self.defaults.get(key)
+		return self.defaults.get(key.lower())
 	def get_active(self,key):
-		return self.get_user(key) or self.get_default(key)
+		return self.usersettings.get(key.lower(),self.defaults.get(key.lower()))
 
 	def __getitem__(self,key):
 		return self.get_active(key)
 		#if key in self.usersettings: return self.usersettings[key]
 		#if key in self.defaults: return self.defaults[key]
 		#return None
+
+	def __setitem__(self,key,value):
+		self.usersettings[key] = value
+		self.write_to_file()
 
 	def __iter__(self):
 		return (k for k in self.defaults)
@@ -83,12 +99,22 @@ class Configuration:
 			print("Could not write file",self.configfile)
 			raise
 
+
+	def render_help(self,targetfile):
+		template = JINJAENV.get_template("settings.md.jinja")
+		txt = template.render({"configuration":self})
+		with open(targetfile,"w") as fd:
+			fd.write(txt)
+
 # this is just a namespace, not a real class
 class types:
 
 	class SettingType:
 		def __init__(self):
 			pass
+
+		def __desc__(self):
+			return "Generic Datatype"
 
 		def html(self,active,default,user,setting):
 			template = JINJAENV.get_template(self.jinjafile())
@@ -103,6 +129,9 @@ class types:
 			else:
 				return self.default
 
+		def html_value(self,value):
+			return value
+
 	class Integer(SettingType):
 		regex = "[0-9]+"
 		default = 0
@@ -111,6 +140,9 @@ class types:
 			self.min = min
 			self.max = max
 
+		def __desc__(self):
+			return "Integer"
+
 		def validate(self,input):
 			return isinstance(input,int) and input >= self.min and input <= self.max
 
@@ -118,15 +150,26 @@ class types:
 		regex = "([^'\"]*)"
 		default = ""
 
-		def __init__(self,minlength=0,maxlength=math.inf):
+		def __init__(self,minlength=0,maxlength=math.inf,allow_false=True):
 			self.minlength = minlength
 			self.maxlength = maxlength
+			self.allow_false = allow_false
+
+		def __desc__(self):
+			return "String"
 
 		def validate(self,input):
-			return isinstance(input,str) and len(input) >= self.minlength and len(input) <= self.maxlength
+			return (self.allow_false and input is False) or isinstance(input,str) and len(input) >= self.minlength and len(input) <= self.maxlength
+
+		def html_value(self,value):
+			if value in [None,False]: return ""
+			else: return value
 
 	class ASCIIString(String):
 		regex = r"\w*"
+
+		def __desc__(self):
+			return "ASCII String"
 
 		def validate(self,input):
 			return isinstance(input,str) and len(input) >= self.minlength and len(input) <= self.maxlength
@@ -135,10 +178,16 @@ class types:
 		def __init__(self,options=()):
 			self.options = options
 
+		def __desc__(self):
+			return "Choice"
+
 		def validate(self,input):
 			return input in self.options
 
 	class MultiChoice(Choice):
+
+		def __desc__(self):
+			return "Multiple Choice"
 		def validate(self,input):
 			return all([i in self.options for i in input])
 
@@ -149,6 +198,9 @@ class types:
 			self.type = type
 			self.minmembers = minmembers
 			self.maxmembers = maxmembers
+
+		def __desc__(self):
+			return "Set"
 
 		def validate(self,input):
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
@@ -161,18 +213,20 @@ class types:
 			self.minmembers = minmembers
 			self.maxmembers = maxmembers
 
+		def __desc__(self):
+			return "List"
+
 		def validate(self,input):
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
 
 	class Boolean(SettingType):
 		default = False
 
-		def sanitize(self,input):
-			if input.lower() == "on":
-				return True
-			if input.lower() == "off":
-				return False
-			return input
+		def __desc__(self):
+			return "Boolean"
+
+		def validate(self,input):
+			return input in [True,False]
 
 
 class formats:
@@ -208,10 +262,12 @@ class formats:
 
 	class INIHandler(GenericHandler):
 
+		boolx = lambda x: True if x.lower() in ['true','yes','y'] else False if x.lower() in ['false','no','n'] else None
 		regex_key = 					re.compile(r"([a-zA-Z][\w]+)"	) # at least 2 characters
 		regex_values = [
 			("singlequoted",	str,	re.compile(r"'([^']*)'")),
 			("doublequoted",	str,	re.compile(r'"([^"]*)"')),
+			("boolean",			boolx,	re.compile(r"(false|no|n|true|yes|y)",re.IGNORECASE)),
 			("identifier",		str,	re.compile(r"([a-zA-Z][\w]+)")),
 			("integer",			int,	re.compile(r"([\d]+)")),
 			("float",			float,	re.compile(r"([\d]+[.]?[\d]*)"))
@@ -244,7 +300,11 @@ class formats:
 		def data_to_text(self,data):
 			lines = []
 			for k in data:
-				lines.append(k + " = " + str(data[k]))
+				if isinstance(data[k],str):
+					if '"' not in data[k]: val = f'"{data[k]}"'
+					elif "'" not in data[k]: val = f"'{data[k]}'"
+				else: val = str(data[k])
+				lines.append(k.upper() + " = " + val)
 			lines.append("")
 
 			return "\n".join(lines)

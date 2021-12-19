@@ -1,0 +1,10 @@
+Technically, each setting can be set via environment variable or the settings file - simply add the prefix `{{ configuration.env_prefix }}` for environment variables. The columns are filled according to what is reasonable, it is recommended to use the settings file where possible and not configure each aspect of your server via environment variables!
+
+Settings File			| Environment Variable			| Type			| Description
+------					| ---------						| ---------		| ---------
+{% for cat in configuration.categories -%}
+**{{ cat }}**
+{% for key in configuration.categories[cat] -%}
+`{{ key }}`	| `{{ configuration.env_prefix }}{{ key | upper }}`  | {{ configuration.types[key].__desc__() }} | {{ configuration.descs[key] or configuration.names[key] }}
+{% endfor %}
+{%- endfor %}
