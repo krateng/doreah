@@ -1,10 +1,15 @@
 {% for opt in type.options %}
 	{% set name = type.options[opt] %}
-	{% if active == opt %}
-		<input form="doreah_config_form" type="radio" name="{{ setting }}" id="option_{{ setting }}_{{ opt }}" value="{{ opt }}" onchange="saveChanges()" checked='true' />
-	{% else %}
-		<input form="doreah_config_form" type="radio" name="{{ setting }}" id="option_{{ setting }}_{{ opt }}" value="{{ opt }}" onchange="saveChanges()" />
-	{% endif %}
+
+	<input
+		form="doreah_config_form"
+		type="radio"
+		name="{{ setting }}"
+		id="option_{{ setting }}_{{ opt }}"
+		value="{{ opt }}"
+		onchange="submitValue('{{ setting }}',this.value)"
+		{% if active == opt %}checked='true'{% endif %}
+	/>
 
 	<label for="option_{{ setting }}_{{ opt }}">{{ name }}</label>
 {% endfor %}

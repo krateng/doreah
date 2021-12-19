@@ -5,4 +5,4 @@
 	step="1"
 	placeholder="{{ default }}"
 	{% if user %}value="{{ user }}"{% endif %}
-	onchange="saveChanges()" />
+	onchange="if (this.value == '') { submitValue('{{ setting }}',null) } else { submitValue('{{ setting }}',Number(this.value)) }" />

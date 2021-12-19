@@ -3,5 +3,7 @@
 	type="text"	name="{{ setting }}"
 	{# maxlength="{{ type.maxlength }}" #}
 	placeholder="{{ default }}"
+	{% if user %}
 	value="{{ user }}"
-	onchange="saveChanges()" />
+	{% endif %}
+	onchange="if (this.value == '') {} else { submitValue('{{ setting }}',this.value); }" />
