@@ -2,6 +2,7 @@ from ._internal import DEFAULT, defaultarguments, DoreahConfig
 import math
 import string
 import re
+import os
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 ## for these configuration objects:
@@ -26,20 +27,23 @@ JINJAENV = Environment(
 class Configuration:
 
 
-	def __init__(self,settings,configfile="settings.ini",save_endpoint="/settings",env_prefix="DOREAH_"):
+	def __init__(self,settings,configfile="settings.ini",save_endpoint="/settings",env_prefix=None):
 		flatten = {key.lower():settings[category][key] for category in settings for key in settings[category]}
 		self.categories = {cat:[k for k in settings[cat]] for cat in settings}
 		self.types = {k:flatten[k][0] for k in flatten}
 		self.names = {k:flatten[k][1] for k in flatten}
-		self.defaults = {k:flatten[k][2] for k in flatten}
 		self.descs = {k:flatten[k][3] for k in flatten if len(flatten[k]) > 3}
+
 		self.usersettings = {}
+		self.environment = {}
+		self.defaults = {k:flatten[k][2] for k in flatten}
 		#self.expire = {k:flatten[k][3] if len(flatten[k])>3 else -1 for k in flatten}
 
 		self.configfile = configfile
 		self.save_endpoint = save_endpoint
 		self.env_prefix = env_prefix
 
+		self.load_environment()
 		self.load_from_file()
 
 	def update(self,settings):
@@ -49,12 +53,25 @@ class Configuration:
 		self.write_to_file()
 
 
+
+	# get from various sources
 	def get_user(self,key):
 		return self.usersettings.get(key.lower())
+
+
+	# 'default' here doesn't mean just the default values, but everything below user agency (including env vars)
 	def get_default(self,key):
-		return self.defaults.get(key.lower())
+		for layer in (self.environment,self.defaults):
+			val = layer.get(key.lower())
+			if val is not None: return val
+		return None
+
+
+	# get the one that's valid
 	def get_active(self,key):
-		return self.usersettings.get(key.lower(),self.defaults.get(key.lower()))
+		v = self.get_user(key)
+		if v is None: v = self.get_default(key)
+		return v
 
 	def __getitem__(self,key):
 		# special case to support easier transition from settings module
@@ -80,6 +97,15 @@ class Configuration:
 	def html(self):
 		template = JINJAENV.get_template("settings.jinja")
 		return template.render({"configuration":self})
+
+	def load_environment(self):
+		if self.env_prefix is not None:
+			for k in os.environ:
+				if k.startswith(self.env_prefix.upper()):
+					sk = k[len(self.env_prefix):].lower()
+					if sk in self.types:
+						self.environment[sk] = self.types[sk].fromstring(os.environ[k])
+			#self.environment = {k[len(self.env_prefix):].lower():os.environ[k] for k in os.environ if k.startswith(self.env_prefix.upper())}
 
 	def load_from_file(self):
 		ext = self.configfile.split(".")[-1].lower()
@@ -119,6 +145,7 @@ class types:
 		def __desc__(self):
 			return "Generic Datatype"
 
+		# render the html element for the web interface
 		def html(self,active,default,user,setting):
 			template = JINJAENV.get_template(self.jinjafile())
 			return template.render({"type":self,"active":active,"default":default,"user":user,"setting":setting})
@@ -126,14 +153,20 @@ class types:
 		def jinjafile(self):
 			return "types/" + self.__class__.__name__ + ".jinja"
 
+		# block invalid values
 		def sanitize(self,input):
 			if self.validate(input) or input is False: # False is always allowed
 				return input
 			else:
 				return self.default
 
+		# return how it should be displayed in an html settings field
 		def html_value(self,value):
 			return value
+
+		# parse string inputs
+		def fromstring(self,input):
+			return input
 
 	class Integer(SettingType):
 		regex = "[0-9]+"
@@ -148,6 +181,10 @@ class types:
 
 		def validate(self,input):
 			return isinstance(input,int) and input >= self.min and input <= self.max
+
+		def fromstring(self,input):
+			try: return int(input)
+			except: return None
 
 	class String(SettingType):
 		regex = "([^'\"]*)"
@@ -229,6 +266,11 @@ class types:
 
 		def validate(self,input):
 			return input in [True,False]
+
+		def fromstring(self,input):
+			if input.lower() in ['true','yes','y','on']: return True
+			if input.lower() in ['false','no','n','off']: return False
+			return None
 
 
 class formats:
