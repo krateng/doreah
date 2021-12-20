@@ -271,7 +271,7 @@ class formats:
 			("doublequoted",	str,	re.compile(r'"([^"]*)"')),
 			("boolean",			boolx,	re.compile(r"(false|no|n|true|yes|y)",re.IGNORECASE)),
 			("identifier",		str,	re.compile(r"([a-zA-Z][\w]+)")),
-			("integer",			int,	re.compile(r"([\d]+)")),
+			("integer",			int,	re.compile(r"([-+]?[\d]+)")),
 			("float",			float,	re.compile(r"([\d]+[.]?[\d]*)"))
 		]
 		regex_separator = 				re.compile(r"[ \t]*=[ \t]*")

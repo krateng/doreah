@@ -6,4 +6,4 @@
 	{% if user %}
 	value="{{ user }}"
 	{% endif %}
-	onchange="if (this.value == '') {} else { submitValue('{{ setting }}',this.value); }" />
+	onchange="if (this.value == '') { submitValue('{{ setting }}',null) } else { submitValue('{{ setting }}',this.value); }" />
