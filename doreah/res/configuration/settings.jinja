@@ -18,9 +18,13 @@
 {% set active_value = datatype.html_value(configuration.get_active(key)) %}
 <tr>
 	<td>
-		{{ configuration.names[key] }}
+
 		{% if key in configuration.descs %}
-		<span class="tooltip" style="cursor:default;" href="" title="{{ configuration.descs[key] }}">🛈</span>
+		<span class="tooltip" title="{{ configuration.descs[key] }}">
+			{{ configuration.names[key] }}
+		</span>
+		{% else %}
+			{{ configuration.names[key] }}
 		{% endif %}
 	</td>
 	<td class="doreah_config_setting" data-setting_key="{{ key }}">
@@ -51,3 +55,12 @@
 
 	}
 </script>
+
+<style>
+.tooltip {
+	cursor: help;
+}
+.tooltip:hover {
+	text-decoration: underline dotted;
+}
+</style>
