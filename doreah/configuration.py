@@ -54,23 +54,32 @@ class Configuration:
 
 
 
-	# get from various sources
 	def get_user(self,key):
 		return self.usersettings.get(key.lower())
-
-
-	# 'default' here doesn't mean just the default values, but everything below user agency (including env vars)
+	def get_env(self,key):
+		return self.environment.get(key.lower())
 	def get_default(self,key):
-		for layer in (self.environment,self.defaults):
-			val = layer.get(key.lower())
+		return self.defaults.get(key.lower())
+
+
+	# this method gets the setting only if it's not the web/file-adjustable one
+	def get_fallback(self,key):
+		for layer in (self.get_env,self.get_default):
+			val = layer(key)
 			if val is not None: return val
 		return None
 
+	# this method gets the setting only if it has in any way been user-specified
+	def get_specified(self,key):
+		for layer in (self.get_user,self.get_env):
+			val = layer(key)
+			if val is not None: return val
+		return None
 
 	# get the one that's valid
 	def get_active(self,key):
 		v = self.get_user(key)
-		if v is None: v = self.get_default(key)
+		if v is None: v = self.get_fallback(key)
 		return v
 
 	def __getitem__(self,key):
@@ -129,9 +138,9 @@ class Configuration:
 			raise
 
 
-	def render_help(self,targetfile):
+	def render_help(self,targetfile,top_text=""):
 		template = JINJAENV.get_template("settings.md.jinja")
-		txt = template.render({"configuration":self})
+		txt = template.render({"configuration":self,"top_text":top_text})
 		with open(targetfile,"w") as fd:
 			fd.write(txt)
 

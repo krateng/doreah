@@ -13,7 +13,7 @@
 {% for key in configuration.categories[cat] %}
 
 {% set datatype = configuration.types[key] %}
-{% set default_value = datatype.html_value(configuration.get_default(key)) %}
+{% set default_value = datatype.html_value(configuration.get_fallback(key)) %}
 {% set user_value = datatype.html_value(configuration.get_user(key)) %}
 {% set active_value = datatype.html_value(configuration.get_active(key)) %}
 <tr>
