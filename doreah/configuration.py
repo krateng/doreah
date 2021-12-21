@@ -92,7 +92,7 @@ class Configuration:
 		#return None
 
 	def __setitem__(self,key,value):
-		self.usersettings[key] = value
+		self.usersettings[key.lower()] = value
 		self.write_to_file()
 
 	def __iter__(self):
