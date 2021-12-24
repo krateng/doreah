@@ -1,0 +1,33 @@
+[project]
+name = "doreah"
+version = "1.7.1"
+description = "Small toolkit of utilities for python projects"
+readme = "./README.md"
+requires-python = ">=3.6"
+license = { file="./LICENSE" }
+authors = [ { name="Johannes Krattenmacher", email="doreah@dev.krateng.ch" } ]
+
+urls.repository = "https://github.com/krateng/doreah"
+urls.documentation = "https://doreah.readthedocs.io/en/latest/"
+
+keywords = ["library", "tools"]
+classifiers = [
+	"Programming Language :: Python :: 3",
+	"License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+	"Operating System :: OS Independent"
+]
+
+dependencies = [
+	"lxml",
+	"mechanicalsoup",
+	"requests",
+	"pyyaml",
+	"beautifulsoup4",
+	"jinja2>2.11"
+]
+
+[project.scripts]
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"

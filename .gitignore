@@ -2,8 +2,10 @@
 !README*
 !LICENSE*
 !.gitignore
+!/.github
 !/doreah/
 !/setup.py
 !/docs/
+!/pyproject.toml
 /docs/_build
 *.pyc
