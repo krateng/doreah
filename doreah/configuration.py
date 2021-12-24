@@ -52,6 +52,14 @@ class Configuration:
 			else: self.usersettings[k] = self.types[k].sanitize(settings[k])
 		self.write_to_file()
 
+	def get_setting_info(self,key):
+		return {
+			"key":key.lower(),
+			"value":self.get_active(key),
+			"default":self.get_default(key),
+			"name":self.names[key.lower()],
+			"description":self.descs.get(key.lower()) or None
+		}
 
 
 	def get_user(self,key):
