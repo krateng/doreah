@@ -3,6 +3,7 @@ import math
 import string
 import re
 import os
+import yaml, json
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 ## for these configuration objects:
@@ -90,6 +91,8 @@ class Configuration:
 		if v is None: v = self.get_fallback(key)
 		return v
 
+	### MAGIC
+
 	def __getitem__(self,key):
 		# special case to support easier transition from settings module
 		if isinstance(key,tuple):
@@ -105,6 +108,9 @@ class Configuration:
 
 	def __iter__(self):
 		return (k for k in self.defaults)
+
+	def __len__(self):
+		return len(self.usersettings)
 
 	def todict(self):
 		d = {k:self.defaults[k] for k in self.defaults}
@@ -134,8 +140,8 @@ class Configuration:
 				k in self.types and (self.types[k].validate(settings[k]) or settings[k] is False)
 			}
 			self.usersettings = settings
-		except:
-			print("Could not load file",self.configfile)
+		except FileNotFoundError:
+			self.write_to_file()
 
 	def write_to_file(self):
 		ext = self.configfile.split(".")[-1].lower()
@@ -312,12 +318,15 @@ class formats:
 
 
 	class YAMLHandler(GenericHandler):
-		import yaml
+
 		def load_descriptor(self,descriptor):
 			return yaml.safe_load(descriptor)
 
+		def write_descriptor(self,descriptor,data):
+			return yaml.dump(data,descriptor)
+
 	class JSONHandler(GenericHandler):
-		import json
+
 		def load_descriptor(self,descriptor):
 			return json.load(descriptor)
 

@@ -22,10 +22,6 @@ __all__ = [
 
 from ._internal import config
 
-from .__pkginfo__ import version
-
-
-
 
 # useful things for everyone
 
