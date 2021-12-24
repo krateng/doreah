@@ -20,12 +20,16 @@ def cmd_handle(shortcuts,flags):
 	kwargs = {}
 
 	while len(cmd) > 0:
+		# boolean args don't need an actual argument in the command line - their
+		# presence means true
 		if cmd[0].startswith("--") and cmd[0][2:] in flags:
 			kwargs[cmd[0][2:]] = True
 			cmd = cmd[1:]
 		elif cmd[0].startswith("-") and cmd[0][1:] in shortcuts:
-			kwargs[shortcuts[cmd[0][1:]]] = cmd[1]
-			cmd = cmd[2:]
+			#kwargs[shortcuts[cmd[0][1:]]] = cmd[1]
+			#cmd = cmd[2:]
+			# simply convert to real option and run again
+			cmd[0] = "--" + shortcuts[cmd[0][1:]]
 		elif cmd[0].startswith("--"):
 			kwargs[cmd[0][2:]] = cmd[1]
 			cmd = cmd[2:]
