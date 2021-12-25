@@ -1,6 +1,16 @@
 <html>
+
+	{% set chall = get_challenge() %}
+	{% set challenge = chall.challenge %}
+	{% set modulo = chall.modulo %}
+	{% set generator = chall.generator %}
+
 	<head>
 		<script>
+		const CHALLENGE = '{{ challenge }}';
+		const MODULO = {{ modulo }}n;
+		const GENERATOR = {{ generator }}n;
+
 		function pw_to_hex(pw) {
 			var utf8 = unescape(encodeURIComponent(pw));
 			var arr = [];
@@ -11,15 +21,15 @@
 		}
 
 
-		function solve(generator,challenge,pw,modulo) {
+		function solve(pw) {
 			pw = pw_to_hex(pw);
 			//console.log("challenge: " + challenge + ", pw: " + pw);
 			//pw = parseInt(pw,16);
 			pw = BigInt("0x" + pw);
 			//challenge = parseInt(challenge,16);
-			challenge = BigInt("0x" + challenge);
-			modulo = BigInt(modulo);
-			var res1 = expmod(generator,pw,modulo);
+			challenge = BigInt("0x" + CHALLENGE);
+			modulo = BigInt(MODULO);
+			var res1 = expmod(GENERATOR,pw,modulo);
 			var result = expmod(res1,challenge,modulo);
 			//result = pw.modPow(challenge,modulo)
 			//console.log("result: " + result)
@@ -39,13 +49,13 @@
 		}
 
 
-		function update(generator,challenge,modulo) {
+		function update() {
 			pw = document.getElementById("password").value;
 			if (pw == "") {
 				var resp = "";
 			}
 			else {
-				var resp = solve(generator,challenge,pw,modulo);
+				var resp = solve(pw);
 			}
 
 			document.getElementById("response").value = resp;
@@ -166,17 +176,14 @@
 
 	</head>
 
-	{% set chall = get_challenge() %}
-	{% set challenge = chall.challenge %}
-	{% set modulo = chall.modulo %}
-	{% set generator = chall.generator %}
+
 
 
 	<body>
 		<div class="centered_box">
 			<span id="challengeshow" onclick="this.classList.add('hide');document.getElementById('challengeinfo').classList.remove('hide');">Show Challenge</span>
 			<span class="hide" id="challengeinfo" style="font-size:60%;cursor:default;">{{ challenge }}</span>
-			<input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" oninput="update({generator}n,'{challenge}',{modulo}n)" onkeyup="enterpress(event)" />
+			<input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" oninput="update()" onkeyup="enterpress(event)" />
 			<input id="response" placeholder="Response" />
 			<button id="loginbutton" onclick="auth()">Login</button>
 		</div>
