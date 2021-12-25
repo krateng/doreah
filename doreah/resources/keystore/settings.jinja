@@ -1,0 +1,47 @@
+
+⚠ This is highly experimental. Some features may not work. ⚠
+
+<form id="doreah_keystore_form">
+
+<table>
+
+{% for identifier in keystore.keys %}
+
+{% set key = keystore.keys[identifier] %}
+
+<tr>
+	<td>{{ identifier }}</td>
+	<td>{{ key }}</td>
+</tr>
+{% endfor %}
+
+
+</table>
+</form>
+
+<script>
+	function submitValue(key,val) {
+		var dict = {};
+		dict[key] = val;
+		fetch(
+			"{{ keystore.save_endpoint }}",
+			{
+				'method':'POST',
+				'body':JSON.stringify(dict),
+				'headers': {
+					'Content-Type': 'application/json'
+				}
+			}
+		);
+
+	}
+</script>
+
+<style>
+.tooltip {
+	cursor: help;
+}
+.tooltip:hover {
+	text-decoration: underline dotted;
+}
+</style>

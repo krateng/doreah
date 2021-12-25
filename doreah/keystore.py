@@ -1,8 +1,24 @@
 from ._internal import DoreahConfig
 
+import yaml
+import random
+from jinja2 import Environment, PackageLoader, select_autoescape
+
 
 config = DoreahConfig("keystore",
+	key_length=64
 )
+
+JINJAENV = Environment(
+	loader=PackageLoader('doreah', 'resources/keystore'),
+	autoescape=select_autoescape(['html', 'xml'])
+)
+
+
+
+charset = list(range(10)) + list("abcdefghijklmnopqrstuvwxyz") + list("ABCDEFGHIJKLMNOPQRSTUVWXYZ")
+def randomstring(length):
+	return "".join(str(random.choice(charset)) for _ in range(length))
 
 
 class KeyStore:
@@ -15,12 +31,24 @@ class KeyStore:
 		self.save_endpoint = save_endpoint
 		self.load_from_file()
 
-	def add_key(self,key,identifier):
-		self.keys[identifier] = key
+	def __len__(self):
+		return self.keys.__len__()
+	def __getitem__(self,identifier):
+		return self.keys[identifier]
+	def __setitem__(self,identifier,value):
+		self.keys[identifier] = value
 		self.write_to_file()
+
+	def __iter__(self):
+		return (k for k in self.keys)
 
 	def check_key(self,key):
 		return (key in self.keys.values())
+
+	def generate_key(self,identifier):
+		key = randomstring(config['key_length'])
+		self.keys[identifier] = key
+		return key
 
 	def load_from_file(self):
 		try:
@@ -32,3 +60,7 @@ class KeyStore:
 	def write_to_file(self):
 		with open(self.file,"w") as filed:
 			yaml.dump(self.keys,filed)
+
+	def html(self):
+		template = JINJAENV.get_template("settings.jinja")
+		return template.render({"keystore":self})
