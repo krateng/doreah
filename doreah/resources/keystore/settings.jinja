@@ -11,7 +11,10 @@
 
 <tr>
 	<td>{{ identifier }}</td>
-	<td>{{ key }}</td>
+	<td>
+		<span class='blur'>{{ key }}</span>
+		<!--<span title="Copy" style="cursor:pointer;" onclick="copyToClipboard('{{ key }}')">📋</span>-->
+	</td>
 	<td><button type="button" class="warning" onclick="deleteKey('{{ identifier }}')">Delete</button></td>
 </tr>
 {% endfor %}
@@ -63,13 +66,15 @@
 		}
 		return result;
 	}
+
 </script>
 
 <style>
-.tooltip {
-	cursor: help;
-}
-.tooltip:hover {
-	text-decoration: underline dotted;
-}
+	td .blur {
+		filter: blur(3px);
+	}
+	td:hover .blur {
+		filter: blur(0px);
+	}
+
 </style>
