@@ -1,6 +1,5 @@
 from ._internal import DEFAULT, defaultarguments, DoreahConfig
 from .database import Database, Ref
-from .pyhp import file as pyhpfile
 
 import secrets
 import time
@@ -9,6 +8,7 @@ from threading import Lock
 from bottle import response as bottleresponse
 from bottle import request, HTTPResponse, redirect
 import pkg_resources
+from jinja2 import Environment, PackageLoader, select_autoescape
 
 config = DoreahConfig("auth",
 	multiuser=True,
@@ -16,6 +16,11 @@ config = DoreahConfig("auth",
 	defaultpw="admin",
 	dbfile="authdb.ddb",
 	stylesheets=[]
+)
+
+JINJAENV = Environment(
+	loader=PackageLoader('doreah', 'resources/auth'),
+	autoescape=select_autoescape(['html', 'xml'])
 )
 
 
@@ -248,8 +253,8 @@ def authenticated_api_with_alternate(alt_func):
 
 
 def get_login_page():
-	return pyhpfile(pkg_resources.resource_filename(__name__,"res/login.pyhp"),{"get_challenge":get_challenge,"css":config["stylesheets"]})
-
+	template = JINJAENV.get_template("login.html.jinja")
+	return template.render({"get_challenge":get_challenge,"css":config["stylesheets"]})
 
 
 
