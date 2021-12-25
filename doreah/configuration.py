@@ -20,7 +20,7 @@ config = DoreahConfig("configuration",
 
 
 JINJAENV = Environment(
-	loader=PackageLoader('doreah', 'res/configuration'),
+	loader=PackageLoader('doreah', 'resources/configuration'),
 	autoescape=select_autoescape(['html', 'xml'])
 )
 
