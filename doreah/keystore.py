@@ -48,7 +48,23 @@ class KeyStore:
 	def generate_key(self,identifier):
 		key = randomstring(config['key_length'])
 		self.keys[identifier] = key
+		self.write_to_file()
 		return key
+
+	def add_key(self,identifier,key):
+		self.keys[identifier] = key
+		self.write_to_file()
+
+	def delete_key(self,identifier):
+		del self.keys[identifier]
+		self.write_to_file()
+
+	def update(self,dict):
+		for identifier in dict:
+			if dict[identifier] is None:
+				self.delete_key(identifier)
+			else:
+				self.add_key(identifier,dict[identifier])
 
 	def load_from_file(self):
 		try:

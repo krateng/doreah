@@ -1,7 +1,7 @@
 
 ⚠ This is highly experimental. Some features may not work. ⚠
 
-<form id="doreah_keystore_form">
+<br/><br/>
 
 <table>
 
@@ -12,17 +12,31 @@
 <tr>
 	<td>{{ identifier }}</td>
 	<td>{{ key }}</td>
+	<td><button type="button" class="warning" onclick="deleteKey('{{ identifier }}')">Delete</button></td>
 </tr>
 {% endfor %}
 
+<tr>
+	<td>
+		<input type="text" placeholder='Identifier' id='new_identifier' />
+	</td>
+	<td>
+		<button type="button" onclick="addKey()">New Key</button>
+	</td>
+</tr>
+
 
 </table>
-</form>
 
 <script>
-	function submitValue(key,val) {
+	function addKey() {
+		ident = document.getElementById('new_identifier').value;
+		key = createRandomKey(32);
+		setKey(ident,key);
+	}
+	function setKey(ident,key) {
 		var dict = {};
-		dict[key] = val;
+		dict[ident] = key;
 		fetch(
 			"{{ keystore.save_endpoint }}",
 			{
@@ -32,8 +46,22 @@
 					'Content-Type': 'application/json'
 				}
 			}
-		);
+		).then(response => location.reload());
 
+	}
+
+	function deleteKey(ident) {
+		return setKey(ident,null);
+	}
+
+	function createRandomKey(length) {
+		var result = '';
+		var characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+		var chars = characters.length;
+		for ( var i = 0; i < chars; i++ ) {
+			result += characters.charAt(Math.floor(Math.random() * chars));
+		}
+		return result;
 	}
 </script>
 
