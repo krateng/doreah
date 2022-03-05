@@ -28,7 +28,7 @@ JINJAENV = Environment(
 class Configuration:
 
 
-	def __init__(self,settings,configfile="settings.ini",save_endpoint="/settings",env_prefix=None,extra_dir="/run/secrets"):
+	def __init__(self,settings,configfile="settings.ini",save_endpoint="/settings",env_prefix=None,extra_dir="/run/secrets",extra_files=None):
 		flatten = {key.lower():settings[category][key] for category in settings for key in settings[category]}
 		self.categories = {cat:[k for k in settings[cat]] for cat in settings}
 		self.types = {k:flatten[k][0] for k in flatten}
@@ -44,6 +44,7 @@ class Configuration:
 		self.save_endpoint = save_endpoint
 		self.env_prefix = env_prefix
 		self.extra_dir = extra_dir
+		self.extra_files = extra_files or []
 
 		self.load_environment()
 		self.load_from_file()
@@ -126,12 +127,26 @@ class Configuration:
 
 	def load_environment(self):
 		# load secrets
-		if self.secret_dir is not None:
+		if self.extra_dir is not None:
 			for f in os.listdir(self.extra_dir):
 				# filename is the setting name
 				if f in self.types:
 					with open(os.path.join(self.extra_dir,f),'r') as fd:
 						self.environment[f] = self.types[f].fromstring(fd.read().split('\n')[0])
+
+		# load read-only settings file
+		for extrafile in self.extra_files:
+			ext = extrafile.split(".")[-1].lower()
+			try:
+				settings = formats.loaders[ext].load_file(extrafile)
+				settings = {k.lower():settings[k] for k in settings}
+				settings = {
+					k:settings[k] for k in settings if
+					k in self.types and (self.types[k].validate(settings[k]) or settings[k] is False)
+				}
+				self.environment.update(settings)
+			except FileNotFoundError:
+				pass
 
 		# load environment variables
 		if self.env_prefix is not None:
