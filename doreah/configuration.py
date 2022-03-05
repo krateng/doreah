@@ -28,7 +28,7 @@ JINJAENV = Environment(
 class Configuration:
 
 
-	def __init__(self,settings,configfile="settings.ini",save_endpoint="/settings",env_prefix=None):
+	def __init__(self,settings,configfile="settings.ini",save_endpoint="/settings",env_prefix=None,extra_dir="/run/secrets"):
 		flatten = {key.lower():settings[category][key] for category in settings for key in settings[category]}
 		self.categories = {cat:[k for k in settings[cat]] for cat in settings}
 		self.types = {k:flatten[k][0] for k in flatten}
@@ -43,6 +43,7 @@ class Configuration:
 		self.configfile = configfile
 		self.save_endpoint = save_endpoint
 		self.env_prefix = env_prefix
+		self.extra_dir = extra_dir
 
 		self.load_environment()
 		self.load_from_file()
@@ -72,6 +73,7 @@ class Configuration:
 
 
 	# this method gets the setting only if it's not the web/file-adjustable one
+	# i.e. environment or default
 	def get_fallback(self,key):
 		for layer in (self.get_env,self.get_default):
 			val = layer(key)
@@ -79,6 +81,7 @@ class Configuration:
 		return None
 
 	# this method gets the setting only if it has in any way been user-specified
+	# i.e. direct (web/file) or environment
 	def get_specified(self,key):
 		for layer in (self.get_user,self.get_env):
 			val = layer(key)
@@ -122,6 +125,15 @@ class Configuration:
 		return template.render({"configuration":self})
 
 	def load_environment(self):
+		# load secrets
+		if self.secret_dir is not None:
+			for f in os.listdir(self.extra_dir):
+				# filename is the setting name
+				if f in self.types:
+					with open(os.path.join(self.extra_dir,f),'r') as fd:
+						self.environment[f] = self.types[f].fromstring(fd.read().split('\n')[0])
+
+		# load environment variables
 		if self.env_prefix is not None:
 			for k in os.environ:
 				if k.startswith(self.env_prefix.upper()):
