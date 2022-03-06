@@ -127,7 +127,7 @@ class Configuration:
 
 	def load_environment(self):
 		# load secrets
-		if self.extra_dir is not None:
+		if self.extra_dir is not None and os.path.exists(self.extra_dir):
 			for f in os.listdir(self.extra_dir):
 				# filename is the setting name
 				if f in self.types:
