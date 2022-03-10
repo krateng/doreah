@@ -7,7 +7,6 @@ from nimrodel import EAPI
 from threading import Lock
 from bottle import response as bottleresponse
 from bottle import request, HTTPResponse, redirect
-import pkg_resources
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 config = DoreahConfig("auth",
