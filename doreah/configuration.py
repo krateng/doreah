@@ -1,10 +1,14 @@
-from ._internal import DEFAULT, defaultarguments, DoreahConfig
+"""Module that allows handling user configuration from files, environment variables
+and a web interface."""
+
+
 import math
 import string
 import re
 import os
-import yaml, json
 from jinja2 import Environment, PackageLoader, select_autoescape
+
+from .persistence import DiskDict, handlers
 
 ## for these configuration objects:
 ## 		NONE always is equivalent to the setting not being specified - i.e. fallback to default
@@ -13,10 +17,6 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 ##		parsing and conversion of values should be done client-side. the server only checks if valid and rejects if not
 
 
-
-
-config = DoreahConfig("configuration",
-)
 
 
 JINJAENV = Environment(
@@ -35,25 +35,25 @@ class Configuration:
 		self.names = {k:flatten[k][1] for k in flatten}
 		self.descs = {k:flatten[k][3] for k in flatten if len(flatten[k]) > 3}
 
-		self.usersettings = {}
+		self.usersettings = DiskDict(filename=configfile)
 		self.environment = {}
 		self.defaults = {k:flatten[k][2] for k in flatten}
 		#self.expire = {k:flatten[k][3] if len(flatten[k])>3 else -1 for k in flatten}
 
-		self.configfile = configfile
+		#self.configfile = configfile
 		self.save_endpoint = save_endpoint
 		self.env_prefix = env_prefix
 		self.extra_dir = extra_dir
 		self.extra_files = extra_files or []
 
 		self.load_environment()
-		self.load_from_file()
+		#self.load_from_file()
 
 	def update(self,settings):
 		for k in settings:
-			if settings[k] is None: del self.usersettings[k]
-			else: self.usersettings[k] = self.types[k].sanitize(settings[k])
-		self.write_to_file()
+			if settings[k] is None: self.usersettings.delitem_nosync(k)
+			else: self.usersettings.setitem_nosync(k,self.types[k].sanitize(settings[k]))
+		self.usersettings._sync_to_disk()
 
 	def get_setting_info(self,key):
 		return {
@@ -108,17 +108,16 @@ class Configuration:
 
 	def __setitem__(self,key,value):
 		self.usersettings[key.lower()] = value
-		self.write_to_file()
+		#self.write_to_file()
 
 	def __iter__(self):
 		return (k for k in self.defaults)
 
 	def __len__(self):
-		return len(self.usersettings)
+		return len(self.defaults)
 
 	def todict(self):
-		d = {k:self.defaults[k] for k in self.defaults}
-		d.update(self.usersettings)
+		d = {k:self[k] for k in self.defaults}
 		return d
 
 	def html(self):
@@ -138,7 +137,7 @@ class Configuration:
 		for extrafile in self.extra_files:
 			ext = extrafile.split(".")[-1].lower()
 			try:
-				settings = formats.loaders[ext].load_file(extrafile)
+				settings = handlers[ext].load_file(extrafile)
 				settings = {k.lower():settings[k] for k in settings}
 				settings = {
 					k:settings[k] for k in settings if
@@ -157,26 +156,26 @@ class Configuration:
 						self.environment[sk] = self.types[sk].fromstring(os.environ[k])
 			#self.environment = {k[len(self.env_prefix):].lower():os.environ[k] for k in os.environ if k.startswith(self.env_prefix.upper())}
 
-	def load_from_file(self):
-		ext = self.configfile.split(".")[-1].lower()
-		try:
-			settings = formats.loaders[ext].load_file(self.configfile)
-			settings = {k.lower():settings[k] for k in settings}
-			settings = {
-				k:settings[k] for k in settings if
-				k in self.types and (self.types[k].validate(settings[k]) or settings[k] is False)
-			}
-			self.usersettings = settings
-		except FileNotFoundError:
-			self.write_to_file()
-
-	def write_to_file(self):
-		ext = self.configfile.split(".")[-1].lower()
-		try:
-			formats.loaders[ext].write_file(self.configfile,self.usersettings)
-		except:
-			print("Could not write file",self.configfile)
-			raise
+#	def load_from_file(self):
+#		ext = self.configfile.split(".")[-1].lower()
+#		try:
+#			settings = formats.loaders[ext].load_file(self.configfile)
+#			settings = {k.lower():settings[k] for k in settings}
+#			settings = {
+#				k:settings[k] for k in settings if
+#				k in self.types and (self.types[k].validate(settings[k]) or settings[k] is False)
+#			}
+#			self.usersettings = settings
+#		except FileNotFoundError:
+#			self.write_to_file()
+#
+#	def write_to_file(self):
+#		ext = self.configfile.split(".")[-1].lower()
+#		try:
+#			formats.loaders[ext].write_file(self.configfile,self.usersettings)
+#		except:
+#			print("Could not write file",self.configfile)
+#			raise
 
 
 	def render_help(self,targetfile,top_text=""):
@@ -321,95 +320,3 @@ class types:
 			if input.lower() in ['true','yes','y','on']: return True
 			if input.lower() in ['false','no','n','off']: return False
 			return None
-
-
-class formats:
-	class GenericHandler:
-
-		def load_file(self,filename):
-			with open(filename) as descriptor:
-				return self.load_descriptor(descriptor)
-
-		def write_file(self,filename,data):
-			with open(filename,"w") as descriptor:
-				return self.write_descriptor(descriptor,data)
-
-
-		def load_descriptor(self,descriptor):
-			txt = descriptor.read()
-			return self.text_to_data(txt)
-
-		def write_descriptor(self,descriptor,data):
-			txt = self.data_to_text(data)
-			return descriptor.write(txt)
-
-
-	class YAMLHandler(GenericHandler):
-
-		def load_descriptor(self,descriptor):
-			return yaml.safe_load(descriptor)
-
-		def write_descriptor(self,descriptor,data):
-			return yaml.dump(data,descriptor)
-
-	class JSONHandler(GenericHandler):
-
-		def load_descriptor(self,descriptor):
-			return json.load(descriptor)
-
-	class INIHandler(GenericHandler):
-
-		boolx = lambda x: True if x.lower() in ['true','yes','y'] else False if x.lower() in ['false','no','n'] else None
-		regex_key = 					re.compile(r"([a-zA-Z][\w]+)"	) # at least 2 characters
-		regex_values = [
-			("singlequoted",	str,	re.compile(r"'([^']*)'")),
-			("doublequoted",	str,	re.compile(r'"([^"]*)"')),
-			("boolean",			boolx,	re.compile(r"(false|no|n|true|yes|y)",re.IGNORECASE)),
-			("identifier",		str,	re.compile(r"([a-zA-Z][\w]+)")),
-			("integer",			int,	re.compile(r"([-+]?[\d]+)")),
-			("float",			float,	re.compile(r"([\d]+[.]?[\d]*)"))
-		]
-		regex_separator = 				re.compile(r"[ \t]*=[ \t]*")
-
-		regex_value = re.compile("(" + "|".join(exp.pattern for nm,ty,exp in regex_values) + ")")
-		regex_fullline = re.compile("".join(exp.pattern for exp in [
-			regex_key,
-			regex_separator,
-			regex_value
-		]))
-
-
-		def text_to_data(self,txt):
-			result = {}
-			for l in txt.split("\n"):
-				match = self.regex_fullline.fullmatch(l)
-				if match:
-					key, val, *_ = match.groups()
-					for nm,ty,exp in self.regex_values:
-						match = exp.fullmatch(val)
-						if match:
-							val = match.groups()[0]
-							result[key] = ty(val)
-							break
-
-			return result
-
-		def data_to_text(self,data):
-			lines = []
-			for k in data:
-				if isinstance(data[k],str):
-					if '"' not in data[k]: val = f'"{data[k]}"'
-					elif "'" not in data[k]: val = f"'{data[k]}'"
-				else: val = str(data[k])
-				lines.append(k.upper() + " = " + val)
-			lines.append("")
-
-			return "\n".join(lines)
-
-
-	loaders = {
-		"yaml":YAMLHandler(),
-		"yml":YAMLHandler(), #yes, two instances for no reason other than cleaner code
-		"json":JSONHandler(),
-		"ini":INIHandler()
-	}

@@ -1,212 +1,161 @@
-import pickle
-import os
-import math
-import zlib
-import random
-import yaml
-import shutil
+"""Module that offers data structures that are kept persistent on the file system"""
 
-from ._internal import DEFAULT, defaultarguments, gopen, DoreahConfig
+import os, shutil
+import yaml, json
+import re
 
 
-# folder	folder to store log files
-config = DoreahConfig("persistence",
-	folder="storage"
-)
+class DiskDict(dict):
+	"""This object acts as a dictionary with persistence. It is not meant for big data,
+	but simple configuration files and such. Keys are always strings and case-insensitive."""
 
+	def __init__(self,filename,readonly=False):
+		self.filename = filename
+		self.internal_dict = {}
+		self.handler = get_handler(filename)
+		self.readonly = readonly
 
-@defaultarguments(config,folder="folder")
-def save(data,name,folder=DEFAULT):
-	"""Saves the supplied data structure to disk.
+		if os.path.exists(self.filename):
+			self._sync_from_disk()
 
-	:param data: Object to be serialized and saved to disk
-	:param string name: File name to be used
-	:param string folder: Custom folder to save the file in"""
+		if not self.readonly:
+			try:
+				self._sync_to_disk()
+			except PermissionError as e:
+				self.readonly = True
 
-	filename = os.path.join(folder,name)
+	def _sync_from_disk(self):
+		data = self.handler.load_file(self.filename)
+		self.internal_dict.update({k.lower():data[k] for k in data})
+	def _sync_to_disk(self):
+		tmpfile = self.filename + ".tmp"
+		self.handler.write_file(tmpfile,{k.lower():self.internal_dict[k] for k in self.internal_dict})
+		shutil.move(tmpfile,self.filename)
 
-	try:
-		with gopen(filename,"wb") as fl:
-			stream = pickle.dumps(data)
-			fl.write(stream)
-	except:
-		pass
+	def __repr__(self):
+		return self.internal_dict.__repr__()
 
-@defaultarguments(config,folder="folder")
-def load(name,folder=DEFAULT):
-	"""Loads a data structure from disk.
-
-	:param string name: File name to be read
-	:param string folder: Custom folder where the file is stored
-	:return: Data object"""
-
-	filename = os.path.join(folder,name)
-
-	try:
-		with gopen(filename,"rb") as fl:
-			ob = pickle.loads(fl.read())
-	except: ob = None
-
-	return ob
-
-@defaultarguments(config,folder="folder")
-def delete(name,folder=DEFAULT):
-	"""Deletes a serialized data structure from disk.
-
-	:param string name: File name
-	:param string folder: Custom folder where the file is stored"""
-
-	filename = os.path.join(folder,name)
-	try:
-		os.remove(filename)
-	except:
-		pass
-
-@defaultarguments(config,folder="folder")
-def size(name,folder=DEFAULT):
-	"""Returns the size of a serialized object.
-
-	:param string name: File name
-	:param string folder: Custom folder where the file is stored"""
-
-	filename = os.path.join(folder,name)
-	return os.path.getsize(filename)
-
-
-# need a deterministic hash function
-def _hash(val):
-	if isinstance(val,int):
-		return val
-	elif isinstance(val,str):
-		return zlib.adler32(bytes(val,encoding='UTF-8'))
-	elif isinstance(val,dict):
-		return _hash(tuple((k,val[k]) for k in sorted(val)))
-	elif isinstance(val,tuple) or isinstance(val,list):
-		x = 10
-		i = 1
-		for element in val:
-			x = ((x * _hash(element)) ** i)
-			i += 1
-		return x
-
-	try:
-		return zlib.adler32(val)
-	except: pass
-	try:
-		return zlib.adler32(bytes(val))
-	except: pass
-
-
-
-class DiskDict:
-	"""Dictionary-like object that stores its authorative information completely on disk.
-
-	:param integer maxmemory: Soft memory limit (in bytes), not meant for precision
-	:param integer maxstorage: Soft disk space limit (in bytes), not meant for precision
-	:param string name: Directory name used for storage
-	:param string folder: Parent directory"""
-
-	@defaultarguments(config,folder="folder")
-	def __init__(self,maxmemory=math.inf,maxstorage=1024*1024*1024*4,name="diskdict",folder=DEFAULT):
-
-		self.maxmemory = maxmemory
-		self.maxstorage = maxstorage
-
-		self.name = name
-		self.folder = os.path.join(folder,name)
-
-
-		self.cache = {}
-		self.cache_unhashable = {}
-
-
-	def __contains__(self,key):
-		try:
-			self.get(key)
-			return True
-		except:
-			return False
-	def __getitem__(self,key):
-		return self.get(key)
 	def __setitem__(self,key,value):
-		return self.add(key,value)
-	def __delitem__(self,key):
-		pass
+		self._sync_from_disk()
+		self.internal_dict.__setitem__(key.lower(),value)
+		self._sync_to_disk()
 
-	def __str__(self):
-		return "{" + ",".join([str(key) + ":" + str(self.cache[key]) for key in self.cache] + ["etc."]) + "}"
+	def __getitem__(self,key):
+		self._sync_from_disk()
+		return self.internal_dict.__getitem__(key.lower())
+
+	def __delitem__(self,key):
+		self._sync_from_disk()
+		self.internal_dict.__delitem__(key.lower())
+		self._sync_to_disk()
 
 	def get(self,key):
-		"""Get the value of a key.
+		return self.internal_dict.get(key)
 
-		:param key: Key to be retrieved
-		:return: Value of the requested key
-		:raises KeyError: No valid entry for the key found."""
-
-		hashvalue = str(_hash(key))
-		try:
-			return self.cache[key]
-		except: pass
-		try:
-			return self.cache_unhashable[hashvalue]
-		except: pass
-
-		if os.path.exists(os.path.join(self.folder,hashvalue)):
-			possibilities = os.listdir(os.path.join(self.folder,hashvalue))
-			for p in possibilities:
-				result = load(os.path.join(self.name,hashvalue,p),folder=self.folder)
-				if result[0] == key:
-					val = result[1]
-					try:
-						self.cache[key] = val
-					except TypeError:
-						self.cache_unhashable[hashvalue] = val
-					return val
-
-		raise KeyError()
+	# update should save to disk only once. no need to do it for every entry
+	def update(self,otherdict):
+		self._sync_from_disk()
+		self.internal_dict.update(otherdict)
+		self._sync_to_disk()
 
 
 
-	def add(self,key,value):
-		"""Add an entry.
 
-		:param key: Key to be added
-		:param value: Value of this entry"""
+# Handlers for the different data file types.
 
-		hashvalue = str(_hash(key))
+handlers = {}
 
-		# cache
-		try:
-			self.cache[key] = value
-		except TypeError:
-			self.cache_unhashable[hashvalue] = value
-
-		name = str(random.uniform(1000000000,9999999999)).replace(".","")
-		save((key,value),os.path.join(self.name,hashvalue,name),folder=self.folder)
+def get_handler(filename):
+	ext = filename.split('.')[-1].lower()
+	return handlers[ext]
 
 
+class GenericHandler:
+	def __init_subclass__(cls):
+		for ext in cls.extensions:
+			handlers[ext] = cls()
 
-class YAMLDict(dict):
+	def load_file(self,filename):
+		with open(filename) as descriptor:
+			return self.load_descriptor(descriptor)
 
-	def __init__(self,filename,d={},update_every_nth_change=10):
-		self.filename = filename
-		self.freq = update_every_nth_change
-		super().__init__(d)
-		if os.path.exists(self.filename):
-			with open(self.filename) as df:
-				self.update(yaml.safe_load(df))
+	def write_file(self,filename,data):
+		with open(filename,"w") as descriptor:
+			return self.write_descriptor(descriptor,data)
 
-		self.savetodisk()
 
-	def __setitem__(self,key,value):
-		super().__setitem__(key,value)
-		if random.choice(range(0,self.freq)) == 0:
-			self.savetodisk()
+	def load_descriptor(self,descriptor):
+		txt = descriptor.read()
+		return self.text_to_data(txt)
 
-	def savetodisk(self):
-		with open(self.filename + ".tmp","w") as df:
-			yaml.dump(self.tonormaldict(),df)
-		shutil.move(self.filename + ".tmp",self.filename)
+	def write_descriptor(self,descriptor,data):
+		txt = self.data_to_text(data)
+		return descriptor.write(txt)
 
-	def tonormaldict(self):
-		return {k:self[k] for k in self}
+
+class YAMLHandler(GenericHandler):
+	extensions = ["yml","yaml"]
+
+	def load_descriptor(self,descriptor):
+		return yaml.safe_load(descriptor)
+
+	def write_descriptor(self,descriptor,data):
+		return yaml.dump(data,descriptor)
+
+class JSONHandler(GenericHandler):
+	extensions = ["json"]
+
+	def load_descriptor(self,descriptor):
+		return json.load(descriptor)
+
+class INIHandler(GenericHandler):
+	extensions = ["ini"]
+
+	boolx = lambda x: True if x.lower() in ['true','yes','y'] else False if x.lower() in ['false','no','n'] else None
+	nullx = lambda x: None
+	regex_key = 					re.compile(r"([a-zA-Z][\w]+)"	) # at least 2 characters
+	regex_values = [
+		("singlequoted",	str,	re.compile(r"'([^']*)'")),
+		("doublequoted",	str,	re.compile(r'"([^"]*)"')),
+		("boolean",			boolx,	re.compile(r"(false|no|n|true|yes|y)",re.IGNORECASE)),
+		("null",			nullx,	re.compile(r"(none|null)",re.IGNORECASE)),
+		("identifier",		str,	re.compile(r"([a-zA-Z][\w]+)")),
+		("integer",			int,	re.compile(r"([-+]?[\d]+)")),
+		("float",			float,	re.compile(r"([\d]+[.]?[\d]*)"))
+	]
+	regex_separator = 				re.compile(r"[ \t]*=[ \t]*")
+
+	regex_value = re.compile("(" + "|".join(exp.pattern for nm,ty,exp in regex_values) + ")")
+	regex_fullline = re.compile("".join(exp.pattern for exp in [
+		regex_key,
+		regex_separator,
+		regex_value
+	]))
+
+
+	def text_to_data(self,txt):
+		result = {}
+		for l in txt.split("\n"):
+			match = self.regex_fullline.fullmatch(l)
+			if match:
+				key, val, *_ = match.groups()
+				for nm,ty,exp in self.regex_values:
+					match = exp.fullmatch(val)
+					if match:
+						val = match.groups()[0]
+						result[key] = ty(val)
+						break
+
+		return result
+
+	def data_to_text(self,data):
+		lines = []
+		for k in data:
+			if isinstance(data[k],str):
+				if '"' not in data[k]: val = f'"{data[k]}"'
+				elif "'" not in data[k]: val = f"'{data[k]}'"
+			else: val = str(data[k])
+			lines.append(k + " = " + val)
+		lines.append("")
+
+		return "\n".join(lines)
