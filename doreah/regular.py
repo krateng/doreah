@@ -4,41 +4,14 @@ import random
 
 from ._internal import DEFAULT, defaultarguments, gopen, DoreahConfig
 
-_yearly_funcs = []
-_monthly_funcs = []
-_daily_funcs = []
 
 
 config = DoreahConfig("regular",
-	autostart=True,
 	offset=0
 )
 
 def tz():
 	return datetime.timezone(offset=datetime.timedelta(hours=config["offset"]))
-
-
-def yearly(func):
-	"""Decorator for yearly functions. Depending on configuration, is equivalent to either :meth:`runyearly` or :meth:`repeatyearly`."""
-	if config["autostart"]: return runyearly(func)
-	else: return repeatyearly(func)
-
-def monthly(func):
-	"""Decorator for monthly functions. Depending on configuration, is equivalent to either :meth:`runmonthly` or :meth:`repeatmonthly`."""
-	if config["autostart"]: return runmonthly(func)
-	else: return repeatmonthly(func)
-
-def daily(func):
-	"""Decorator for daily functions. Depending on configuration, is equivalent to either :meth:`rundaily` or :meth:`repeatdaily`."""
-	if config["autostart"]: return rundaily(func)
-	else: return repeatdaily(func)
-
-def hourly(func):
-	"""Decorator for hourly functions. Depending on configuration, is equivalent to either :meth:`runhourly` or :meth:`repeathourly`."""
-	if config["autostart"]: return runhourly(func)
-	else: return repeathourly(func)
-
-
 
 
 def runyearly(func):
@@ -191,44 +164,6 @@ def repeathourly(func):
 		now = datetime.datetime.utcnow()
 		nexthour = datetime.datetime(now.year,now.month,now.day,now.hour) + datetime.timedelta(hours=1)
 		wait = nexthour.timestamp() - now.timestamp() + random.randint(5,25)
-		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
-
-	def starter(*args,**kwargs):
-		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
-		t.daemon = True
-		t.start()
-	return starter
-
-
-
-
-
-#for testing
-def _runoften(func):
-	def self_scheduling_func():
-		# execute function
-		func()
-
-		# schedule next execution
-		wait = 15
-		Timer(wait,self_scheduling_func).start()
-
-
-	# now execute it for the first time
-
-	t = Timer(5,self_scheduling_func)
-	t.daemon = True
-	t.start()
-	return func
-
-
-def _repeatoften(func):
-	def self_scheduling_func(*args,**kwargs):
-		# execute function
-		func(*args,**kwargs)
-
-		# schedule next execution
-		wait = 15
 		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
 
 	def starter(*args,**kwargs):
