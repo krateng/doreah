@@ -18,24 +18,29 @@ class DiskDict(dict):
 		if os.path.exists(self.filename):
 			self._sync_from_disk()
 
-		if not self.readonly:
-			try:
-				self._sync_to_disk()
-			except PermissionError as e:
-				self.readonly = True
+
+		try:
+			self._sync_to_disk()
+		except PermissionError as e:
+			self.readonly = True
 
 	def _sync_from_disk(self):
 		data = self.handler.load_file(self.filename)
-		self.internal_dict.update({k.lower():data[k] for k in data})
+		data = {k.lower():data[k] for k in data}
+		self.internal_dict = data
+		#self.internal_dict.update(data)
 	def _sync_to_disk(self):
-		tmpfile = self.filename + ".tmp"
-		self.handler.write_file(tmpfile,{k.lower():self.internal_dict[k] for k in self.internal_dict})
-		shutil.move(tmpfile,self.filename)
+		if not self.readonly:
+			tmpfile = self.filename + ".tmp"
+			data = {k.lower():self.internal_dict[k] for k in self.internal_dict}
+			self.handler.write_file(tmpfile,data)
+			shutil.move(tmpfile,self.filename)
 
 	def __repr__(self):
 		return self.internal_dict.__repr__()
 
 	def __setitem__(self,key,value):
+		if self.readonly: raise PermissionError
 		self._sync_from_disk()
 		self.internal_dict.__setitem__(key.lower(),value)
 		self._sync_to_disk()
@@ -45,6 +50,7 @@ class DiskDict(dict):
 		return self.internal_dict.__getitem__(key.lower())
 
 	def __delitem__(self,key):
+		if self.readonly: raise PermissionError
 		self._sync_from_disk()
 		self.internal_dict.__delitem__(key.lower())
 		self._sync_to_disk()
@@ -54,6 +60,7 @@ class DiskDict(dict):
 
 	# update should save to disk only once. no need to do it for every entry
 	def update(self,otherdict):
+		if self.readonly: raise PermissionError
 		self._sync_from_disk()
 		self.internal_dict.update(otherdict)
 		self._sync_to_disk()

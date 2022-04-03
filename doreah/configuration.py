@@ -46,6 +46,8 @@ class Configuration:
 		self.extra_dir = extra_dir
 		self.extra_files = extra_files or []
 
+		self.readonly = self.usersettings.readonly
+
 		self.load_environment()
 		#self.load_from_file()
 
