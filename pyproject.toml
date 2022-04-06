@@ -18,11 +18,8 @@ classifiers = [
 ]
 
 dependencies = [
-	"lxml",
-	"mechanicalsoup",
 	"requests",
 	"pyyaml",
-	"beautifulsoup4",
 	"jinja2>2.11"
 ]
 
