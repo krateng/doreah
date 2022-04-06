@@ -192,7 +192,37 @@ def check(request):
 	if session.timestamp < time.time(): return False
 
 	session.timestamp = time.time() + SESSION_EXPIRE
-	return True
+	return {'doreah_native_auth_check':True}
+
+
+def authenticated_function(alternate=(lambda x,y,z: False),api=False,pass_auth_result_as=None):
+	"""Decorator to protect call of a function.
+
+	:param function alternate: In addition to doreah's checking, also allow access if this function evaluates to truthy.
+	:param boolean api: Whether this is an API function as opposed to a website
+	:param string pass_auth_result_as: Keyword argument as which the auth result should be passed to the function."""
+
+	def decorator(func):
+		def newfunc(*args,**kwargs):
+			auth_check = check(request) or alternate(request,args,kwargs)
+
+			if auth_check:
+				if pass_auth_result_as:
+					return func(*args,**kwargs,**{pass_auth_result_as:auth_check})
+				else:
+					return func(*args,**kwargs)
+			else:
+				if api:
+					bottleresponse.status = 403
+					return {"error":"Not allowed"}
+				else:
+					return get_login_page()
+
+		newfunc.__annotations__ = func.__annotations__
+		return newfunc
+
+	return decorator
+
 
 def authenticated(func):
 
