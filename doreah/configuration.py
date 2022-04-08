@@ -53,9 +53,11 @@ class Configuration:
 
 	def update(self,settings):
 		for k in settings:
-			if settings[k] is None: self.usersettings.delitem_nosync(k)
-			else: self.usersettings.setitem_nosync(k,self.types[k].sanitize(settings[k]))
-		self.usersettings._sync_to_disk()
+			if settings[k] is None: del self.usersettings[k]
+			else: self.usersettings[k] = self.types[k].sanitize(settings[k])
+			#if settings[k] is None: self.usersettings.delitem_nosync(k)
+			#else: self.usersettings.setitem_nosync(k,self.types[k].sanitize(settings[k]))
+		#self.usersettings._sync_to_disk()
 
 	def get_setting_info(self,key):
 		return {

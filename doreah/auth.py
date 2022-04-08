@@ -204,7 +204,7 @@ def authenticated_function(alternate=(lambda x,y,z: False),api=False,pass_auth_r
 
 	def decorator(func):
 		def newfunc(*args,**kwargs):
-			auth_check = check(request) or alternate(request,args,kwargs)
+			auth_check = alternate(request,args,kwargs) or check(request)
 
 			if auth_check:
 				if pass_auth_result_as:
