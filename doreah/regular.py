@@ -40,46 +40,45 @@ def hourly(func):
 intervals = {
 	'yearly':{
 		'getnext':lambda now:datetime.datetime(now.year+1,1,1,tzinfo=tz()),
-		'variation':(15,200),
 		'functions':[]
 	},
 	'monthly':{
 		'getnext':lambda now:datetime.datetime(now.year,now.month + 1,1,tzinfo=tz()) if now.month != 12 else datetime.datetime(now.year+1,1,1,tzinfo=tz()),
-		'variation':(15,100),
 		'functions':[]
 	},
 	'daily':{
 		'getnext':lambda now:datetime.datetime(now.year,now.month,now.day,tzinfo=tz()) + datetime.timedelta(days=1),
-		'variation':(10,50),
 		'functions':[]
 	},
 	'hourly':{
 		'getnext':lambda now:datetime.datetime(now.year,now.month,now.day,now.hour,tzinfo=tz()) + datetime.timedelta(hours=1),
-		'variation':(5,20),
 		'functions':[]
 	},
 	# just for testing
 	'constantly':{
-		'getnext':lambda now:datetime.datetime.now(tz=tz()) + datetime.timedelta(seconds=10),
-		'variation':(1,2),
+		'getnext':lambda now:datetime.datetime.now(tz=tz()) + datetime.timedelta(seconds=1),
 		'functions':[]
 	}
 }
 
 
 def doreah_regular_daemon(interval):
+	i = 0
 	while True:
+		i += 1
 		now = datetime.datetime.now(tz=tz())
 		next = intervals[interval]['getnext'](now)
 
-		diff = int(next.timestamp() - now.timestamp())
-		rand = random.randint(*intervals[interval]['variation'])
-		wait = diff + rand
+		wait = int(next.timestamp() - now.timestamp()) + 5
 
 		time.sleep(wait)
 		for f in intervals[interval]['functions']:
 			try:
-				f['function'](*f['args'],**f['kwargs'])
+				t = Thread(target=f['function'],args=f['args'],kwargs=f['kwargs'])
+				t.daemon = False
+				t.setName(f"doreah-regular-{interval}-loop{i}-{f['function'].__name__}")
+				t.start()
+				#f['function'](*f['args'],**f['kwargs'])
 			except Exception as e:
 				print(e)
 			time.sleep(2)
@@ -88,7 +87,7 @@ def doreah_regular_daemon(interval):
 for interval in intervals:
 	intervals[interval]['thread'] = Thread(target=doreah_regular_daemon,kwargs={'interval':interval})
 	intervals[interval]['thread'].daemon = True
-	intervals[interval]['thread'].setName(f"doreah-regular-{interval}")
+	intervals[interval]['thread'].setName(f"doreah-regular-{interval}-init")
 	intervals[interval]['thread'].start()
 
 
