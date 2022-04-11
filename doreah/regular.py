@@ -1,12 +1,9 @@
 from threading import Thread, Timer
 import datetime
 import random
+import time
 
 from ._internal import DEFAULT, defaultarguments, gopen, DoreahConfig
-
-_yearly_funcs = []
-_monthly_funcs = []
-_daily_funcs = []
 
 
 config = DoreahConfig("regular",
@@ -17,7 +14,7 @@ config = DoreahConfig("regular",
 def tz():
 	return datetime.timezone(offset=datetime.timedelta(hours=config["offset"]))
 
-
+### DEPRECATED
 def yearly(func):
 	"""Decorator for yearly functions. Depending on configuration, is equivalent to either :meth:`runyearly` or :meth:`repeatyearly`."""
 	if config["autostart"]: return runyearly(func)
@@ -37,202 +34,135 @@ def hourly(func):
 	"""Decorator for hourly functions. Depending on configuration, is equivalent to either :meth:`runhourly` or :meth:`repeathourly`."""
 	if config["autostart"]: return runhourly(func)
 	else: return repeathourly(func)
+###
 
 
+intervals = {
+	'yearly':{
+		'getnext':lambda now:datetime.datetime(now.year+1,1,1,tzinfo=tz()),
+		'variation':(15,200),
+		'functions':[]
+	},
+	'monthly':{
+		'getnext':lambda now:datetime.datetime(now.year,now.month + 1,1,tzinfo=tz()) if now.month != 12 else datetime.datetime(now.year+1,1,1,tzinfo=tz()),
+		'variation':(15,100),
+		'functions':[]
+	},
+	'daily':{
+		'getnext':lambda now:datetime.datetime(now.year,now.month,now.day,tzinfo=tz()) + datetime.timedelta(days=1),
+		'variation':(10,50),
+		'functions':[]
+	},
+	'hourly':{
+		'getnext':lambda now:datetime.datetime(now.year,now.month,now.day,now.hour,tzinfo=tz()) + datetime.timedelta(hours=1),
+		'variation':(5,20),
+		'functions':[]
+	},
+	# just for testing
+	'constantly':{
+		'getnext':lambda now:datetime.datetime.now(tz=tz()) + datetime.timedelta(seconds=10),
+		'variation':(1,2),
+		'functions':[]
+	}
+}
+
+
+def doreah_regular_daemon(interval):
+	while True:
+		now = datetime.datetime.now(tz=tz())
+		next = intervals[interval]['getnext'](now)
+
+		diff = int(next.timestamp() - now.timestamp())
+		rand = random.randint(*intervals[interval]['variation'])
+		wait = diff + rand
+
+		time.sleep(wait)
+		for f in intervals[interval]['functions']:
+			try:
+				f['function'](*f['args'],**f['kwargs'])
+			except Exception as e:
+				print(e)
+			time.sleep(2)
+
+
+for interval in intervals:
+	intervals[interval]['thread'] = Thread(target=doreah_regular_daemon,kwargs={'interval':interval})
+	intervals[interval]['thread'].daemon = True
+	intervals[interval]['thread'].setName(f"doreah-regular-{interval}")
+	intervals[interval]['thread'].start()
+
+
+def run_regularly(interval,func):
+
+	functioninfo = {
+		'function':func,
+		'args':(),
+		'kwargs':{}
+	}
+
+	# run it once
+	t = Timer(5,**functioninfo)
+	t.daemon = True
+	t.start()
+
+	# add to list
+	intervals[interval]['functions'].append(functioninfo)
+
+	# return unchanged function
+	return func
+
+def repeat_regularly(interval,func):
+
+	def self_scheduling_func(*args,**kwargs):
+
+		functioninfo = {
+			'function':func,
+			'args':args,
+			'kwargs':kwargs
+		}
+
+		# execute function
+		func(*args,**kwargs)
+
+		# add original function to list, with args and kwargs from first invocation
+		intervals[interval]['functions'].append(functioninfo)
+
+	return self_scheduling_func
 
 
 def runyearly(func):
 	"""Decorator to make the function execute on first definition as well as every year."""
-
-	def self_scheduling_func():
-		# execute function
-		func()
-
-		# schedule next execution
-		now = datetime.datetime.now(tz=tz())
-		nextyear = datetime.datetime(now.year+1,1,1,tzinfo=tz())
-		wait = nextyear.timestamp() - now.timestamp() + random.randint(20,200)
-		Timer(wait,self_scheduling_func).start()
-
-	# now execute it for the first time
-	t = Timer(5,self_scheduling_func)
-	t.daemon = True
-	t.start()
-	return func
+	return run_regularly('yearly',func)
 
 
 def repeatyearly(func):
 	"""Decorator to make the function repeat every new year after being called once."""
-
-	def self_scheduling_func(*args,**kwargs):
-		# execute function
-		func(*args,**kwargs)
-
-		# schedule next execution
-		now = datetime.datetime.now(tz=tz())
-		nextyear = datetime.datetime(now.year+1,1,1,tzinfo=tz())
-		wait = nextyear.timestamp() - now.timestamp() + random.randint(20,200)
-		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
-
-	def starter(*args,**kwargs):
-		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
-		t.daemon = True
-		t.start()
-	return starter
+	return repeat_regularly('yearly',func)
 
 def runmonthly(func):
 	"""Decorator to make the function execute on first definition as well as every month."""
-
-	def self_scheduling_func():
-		# execute function
-		func()
-
-		# schedule next execution
-		now = datetime.datetime.now(tz=tz())
-		nextmonth = datetime.datetime(now.year,now.month + 1,1,tzinfo=tz()) if now.month != 12 else datetime.datetime(now.year+1,1,1,tzinfo=tz())
-		wait = nextmonth.timestamp() - now.timestamp() + random.randint(20,100)
-		Timer(wait,self_scheduling_func).start()
-
-	# now execute it for the first time
-	t = Timer(5,self_scheduling_func)
-	t.daemon = True
-	t.start()
-	return func
-
+	return run_regularly('monthly',func)
 
 def repeatmonthly(func):
 	"""Decorator to make the function repeat every new month after being called once."""
-
-	def self_scheduling_func(*args,**kwargs):
-		# execute function
-		func(*args,**kwargs)
-
-		# schedule next execution
-		now = datetime.datetime.now(tz=tz())
-		nextmonth = datetime.datetime(now.year,now.month + 1,1,tzinfo=tz()) if now.month != 12 else datetime.datetime(now.year+1,1,1,tzinfo=tz())
-		wait = nextmonth.timestamp() - now.timestamp() + random.randint(20,100)
-		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
-
-	def starter(*args,**kwargs):
-		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
-		t.daemon = True
-		t.start()
-	return starter
+	return repeat_regularly('monthly',func)
 
 def rundaily(func):
 	"""Decorator to make the function execute on first definition as well as every day."""
-
-	def self_scheduling_func():
-		# execute function
-		func()
-
-		# schedule next execution
-		now = datetime.datetime.now(tz=tz())
-		nextday = datetime.datetime(now.year,now.month,now.day,tzinfo=tz()) + datetime.timedelta(days=1)
-		wait = nextday.timestamp() - now.timestamp() + random.randint(10,50)
-		Timer(wait,self_scheduling_func).start()
-
-	# now execute it for the first time
-	t = Timer(5,self_scheduling_func)
-	t.daemon = True
-	t.start()
-	return func
-
+	return run_regularly('daily',func)
 
 def repeatdaily(func):
 	"""Decorator to make the function repeat every new day after being called once."""
-
-	def self_scheduling_func(*args,**kwargs):
-		# execute function
-		func(*args,**kwargs)
-
-		# schedule next execution
-		now = datetime.datetime.now(tz=tz())
-		nextday = datetime.datetime(now.year,now.month,now.day,tzinfo=tz()) + datetime.timedelta(days=1)
-		wait = nextday.timestamp() - now.timestamp() + random.randint(10,50)
-		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
-
-	def starter(*args,**kwargs):
-		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
-		t.daemon = True
-		t.start()
-	return starter
-
-
+	return repeat_regularly('daily',func)
 
 def runhourly(func):
 	"""Decorator to make the function execute on first definition as well as every hour."""
-
-	def self_scheduling_func():
-		# execute function
-		func()
-
-		# schedule next execution
-		now = datetime.datetime.utcnow()
-		nexthour = datetime.datetime(now.year,now.month,now.day,now.hour) + datetime.timedelta(hours=1)
-		wait = nexthour.timestamp() - now.timestamp() + random.randint(5,25)
-		Timer(wait,self_scheduling_func).start()
-
-	# now execute it for the first time
-	t = Timer(5,self_scheduling_func)
-	t.daemon = True
-	t.start()
-	return func
-
+	return run_regularly('hourly',func)
 
 def repeathourly(func):
 	"""Decorator to make the function repeat every new hour after being called once."""
+	return repeat_regularly('hourly',func)
 
-	def self_scheduling_func(*args,**kwargs):
-		# execute function
-		func(*args,**kwargs)
-
-		# schedule next execution
-		now = datetime.datetime.utcnow()
-		nexthour = datetime.datetime(now.year,now.month,now.day,now.hour) + datetime.timedelta(hours=1)
-		wait = nexthour.timestamp() - now.timestamp() + random.randint(5,25)
-		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
-
-	def starter(*args,**kwargs):
-		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
-		t.daemon = True
-		t.start()
-	return starter
-
-
-
-
-
-#for testing
-def _runoften(func):
-	def self_scheduling_func():
-		# execute function
-		func()
-
-		# schedule next execution
-		wait = 15
-		Timer(wait,self_scheduling_func).start()
-
-
-	# now execute it for the first time
-
-	t = Timer(5,self_scheduling_func)
-	t.daemon = True
-	t.start()
-	return func
-
-
-def _repeatoften(func):
-	def self_scheduling_func(*args,**kwargs):
-		# execute function
-		func(*args,**kwargs)
-
-		# schedule next execution
-		wait = 15
-		Timer(wait,self_scheduling_func,args=args,kwargs=kwargs).start()
-
-	def starter(*args,**kwargs):
-		t = Thread(target=self_scheduling_func,args=args,kwargs=kwargs)
-		t.daemon = True
-		t.start()
-	return starter
+# just for testing
+def runoften(func):
+	return run_regularly('constantly',func)
