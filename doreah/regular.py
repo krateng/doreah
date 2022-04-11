@@ -83,12 +83,15 @@ def doreah_regular_daemon(interval):
 				print(e)
 			time.sleep(2)
 
+def spawn_all_needed():
 
-for interval in intervals:
-	intervals[interval]['thread'] = Thread(target=doreah_regular_daemon,kwargs={'interval':interval})
-	intervals[interval]['thread'].daemon = True
-	intervals[interval]['thread'].setName(f"doreah-regular-{interval}-init")
-	intervals[interval]['thread'].start()
+	for interval in intervals:
+		data = intervals[interval]
+		if len(data['functions']) > 0 and not data.get('thread'):
+			data['thread'] = Thread(target=doreah_regular_daemon,kwargs={'interval':interval})
+			data['thread'].daemon = True
+			data['thread'].setName(f"doreah-regular-{interval}-init")
+			data['thread'].start()
 
 
 def run_regularly(interval,func):
@@ -106,6 +109,7 @@ def run_regularly(interval,func):
 
 	# add to list
 	intervals[interval]['functions'].append(functioninfo)
+	spawn_all_needed()
 
 	# return unchanged function
 	return func
@@ -125,6 +129,7 @@ def repeat_regularly(interval,func):
 
 		# add original function to list, with args and kwargs from first invocation
 		intervals[interval]['functions'].append(functioninfo)
+		spawn_all_needed()
 
 	return self_scheduling_func
 
