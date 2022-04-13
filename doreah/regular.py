@@ -61,7 +61,8 @@ intervals = {
 	}
 }
 
-
+# init daemon for each interval
+# spawns all runs, then goes to sleep until next time
 def doreah_regular_daemon(interval):
 	i = 0
 	while True:
@@ -83,6 +84,7 @@ def doreah_regular_daemon(interval):
 				print(e)
 			time.sleep(2)
 
+# spawns above init daemons if any functions actually need it
 def spawn_all_needed():
 
 	for interval in intervals:
