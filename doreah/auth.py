@@ -219,6 +219,7 @@ def authenticated_function(alternate=(lambda x,y,z: False),api=False,pass_auth_r
 					return get_login_page()
 
 		newfunc.__annotations__ = func.__annotations__
+		newfunc.__doc__ = func.__doc__
 		return newfunc
 
 	return decorator
