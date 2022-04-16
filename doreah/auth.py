@@ -214,7 +214,13 @@ def authenticated_function(alternate=(lambda x,y,z: False),api=False,pass_auth_r
 			else:
 				if api:
 					bottleresponse.status = 403
-					return {"error":"Not allowed"}
+					return {
+						"status":"failure",
+						"error":{
+							'type':'authentication_fail',
+							'desc':"Invalid or missing authentication"
+						}
+					}
 				else:
 					return get_login_page()
 
