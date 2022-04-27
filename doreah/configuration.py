@@ -297,6 +297,10 @@ class types:
 		def validate(self,input):
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
 
+		def fromstring(self,input):
+			separator = os.environ['PATH_SEPARATOR'] or ':'
+			return set(input.split(separator))
+
 	class List(SettingType):
 		default = []
 
@@ -310,6 +314,10 @@ class types:
 
 		def validate(self,input):
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
+
+		def fromstring(self,input):
+			separator = os.environ['PATH_SEPARATOR'] or ':'
+			return input.split(separator)
 
 	class Boolean(SettingType):
 		default = False
