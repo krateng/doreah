@@ -135,7 +135,7 @@ class Configuration:
 				# filename is the setting name
 				if f in self.types:
 					with open(os.path.join(self.extra_dir,f),'r') as fd:
-						self.environment[f] = self.types[f].fromstring(fd.read().split('\n')[0])
+						self.environment[f] = self.types[f].from_env_string(fd.read().split('\n')[0])
 
 		# load read-only settings file
 		for extrafile in self.extra_files:
@@ -157,7 +157,7 @@ class Configuration:
 				if k.startswith(self.env_prefix.upper()):
 					sk = k[len(self.env_prefix):].lower()
 					if sk in self.types:
-						self.environment[sk] = self.types[sk].fromstring(os.environ[k])
+						self.environment[sk] = self.types[sk].from_env_string(os.environ[k])
 			#self.environment = {k[len(self.env_prefix):].lower():os.environ[k] for k in os.environ if k.startswith(self.env_prefix.upper())}
 
 #	def load_from_file(self):
@@ -218,7 +218,7 @@ class types:
 			return value
 
 		# parse string inputs
-		def fromstring(self,input):
+		def from_env_string(self,input):
 			return input
 
 	class Integer(SettingType):
@@ -235,7 +235,7 @@ class types:
 		def validate(self,input):
 			return isinstance(input,int) and input >= self.min and input <= self.max
 
-		def fromstring(self,input):
+		def from_env_string(self,input):
 			try: return int(input)
 			except: return None
 
@@ -297,8 +297,8 @@ class types:
 		def validate(self,input):
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
 
-		def fromstring(self,input):
-			separator = os.environ['PATH_SEPARATOR'] or ':'
+		def from_env_string(self,input):
+			separator = os.environ.get('PATH_SEPARATOR') or ':'
 			return set(input.split(separator))
 
 	class List(SettingType):
@@ -315,8 +315,8 @@ class types:
 		def validate(self,input):
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
 
-		def fromstring(self,input):
-			separator = os.environ['PATH_SEPARATOR'] or ':'
+		def from_env_string(self,input):
+			separator = os.environ.get('PATH_SEPARATOR') or ':'
 			return input.split(separator)
 
 	class Boolean(SettingType):
@@ -328,7 +328,7 @@ class types:
 		def validate(self,input):
 			return input in [True,False]
 
-		def fromstring(self,input):
+		def from_env_string(self,input):
 			if input.lower() in ['true','yes','y','on']: return True
 			if input.lower() in ['false','no','n','off']: return False
 			return None
