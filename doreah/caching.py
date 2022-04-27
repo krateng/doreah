@@ -51,7 +51,7 @@ class Cache:
 					self.changed = False
 					self._maintenance()
 					return
-			except:
+			except Exception:
 				pass
 		# if either no object loaded, or not persistent in the first place
 		self.cache = {}
@@ -212,7 +212,7 @@ class DeepCache(Cache):
 			obj = load(self._file(),folder=config["folder"])
 			self.cache,self.times,self.counter = obj
 			self.changed = False
-		except:
+		except Exception:
 			self.cache = {}
 			self.times = {}
 			self.counter = 0
@@ -301,7 +301,7 @@ class DeepCache(Cache):
 				try:
 					movekey = keys[0]
 					self._memorytodisk(movekey)
-				except:
+				except Exception:
 					break
 
 			while self._disksize() > self.maxstorage:
@@ -315,7 +315,7 @@ class DeepCache(Cache):
 					delete(self._file(self.cache[delkey].filename),folder=config["folder"])
 					del self.cache[delkey]
 					del self.times[delkey]
-				except:
+				except Exception:
 					break
 
 
@@ -374,7 +374,7 @@ def cached(maxsize=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT,lazy_refresh=D
 			def newfunc(*args,cache=Cache(maxsize=maxsize,maxage=maxage,maxage_negative=maxage_negative)):
 				try:
 					result = cache.get(args,allow_expired=True)
-				except:
+				except Exception:
 					result = func(*args)
 					cache.add(args,result)
 					return result
@@ -398,7 +398,7 @@ def cached(maxsize=DEFAULT,maxage=DEFAULT,maxage_negative=DEFAULT,lazy_refresh=D
 			def newfunc(*args,cache=Cache(maxsize=maxsize,maxage=maxage,maxage_negative=maxage_negative)):
 				try:
 					return cache.get(args)
-				except:
+				except Exception:
 					result = func(*args)
 					cache.add(args,result)
 					return result

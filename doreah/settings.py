@@ -56,11 +56,11 @@ def _interpret(text):
 	if text.startswith('"') and text.endswith('"'): return text[1:-1]
 	try:
 		return int(text)
-	except:
+	except Exception:
 		pass
 	try:
 		return float(text)
-	except:
+	except Exception:
 		pass
 	return text
 

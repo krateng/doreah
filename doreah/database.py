@@ -43,7 +43,7 @@ class Database:
 
 		try:
 			return self.getby(cls,**keys)
-		except:
+		except Exception:
 			return cls(**keys)
 
 	def delete(self,inp):
@@ -82,12 +82,12 @@ class Database:
 			def __repr__(self):
 				try:
 					name = self.__db_repr__()
-				except:
+				except Exception:
 					for attr in ["name","title","identifier"]:
 						try:
 							name = getattr(self,attr)
 							break
-						except:
+						except Exception:
 							pass
 					else:
 						name = "Unknown"
@@ -164,7 +164,7 @@ class Database:
 						# set attributes according to keyword arguments
 						try:
 							assert isinstance(vars[v],types[v])
-						except:
+						except Exception:
 							print("Wrong data type!",v,"should be",types[v],"not",type(vars[v]))
 							raise
 						setattr(self,v,vars[v])
@@ -249,7 +249,7 @@ class Database:
 			#print("Database loaded into memory.")
 			self_db.counter = max([0] + [obj["uid"] for cls in self_db.loadarea for obj in self_db.loadarea[cls]])
 			self_db.inject()
-		except:
+		except Exception:
 			#print("No existing database found.")
 			pass
 
@@ -306,12 +306,12 @@ def yamlify(obj):
 
 	try:
 		return {k:yamlify(obj[k]) for k in obj}
-	except:
+	except Exception:
 		pass
 
 	try:
 		return [yamlify(e) for e in obj]
-	except:
+	except Exception:
 		pass
 
 	return obj.uid
@@ -324,7 +324,7 @@ def tuplify(obj,ignore_capitalization=False):
 
 	try:
 		return frozenset(tuplify(e) for e in obj)
-	except:
+	except Exception:
 		pass
 
 	return obj.uid

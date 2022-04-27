@@ -49,22 +49,22 @@ def parse(filename,*args,comments=DEFAULT,multitab=DEFAULT):
 			if args[i] in ["list","ls","array"]:
 				try:
 					entry.append(data[i].split("␟"))
-				except:
+				except Exception:
 					entry.append([])
 			elif args[i] in ["string","str","text"]:
 				try:
 					entry.append(data[i])
-				except:
+				except Exception:
 					entry.append("")
 			elif args[i] in ["int","integer","num","number"]:
 				try:
 					entry.append(int(data[i]))
-				except:
+				except Exception:
 					entry.append(0)
 			elif args[i] in ["bool","boolean"]:
 				try:
 					entry.append((data[i].lower() in ["true","yes","1","y"]))
-				except:
+				except Exception:
 					entry.append(False)
 			else:
 				raise TypeError()

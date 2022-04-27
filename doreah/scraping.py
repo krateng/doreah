@@ -174,7 +174,7 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 					returned += 1
 				except _GoodException:
 					raise
-				except:
+				except Exception:
 					#print("Failed to get element, skipping...")
 					pass
 
@@ -183,7 +183,7 @@ def scrape_all(base_url,steps_elements,steps_content,start_page=0,page_multiplie
 
 	except _GoodException:
 		pass
-	except:
+	except Exception:
 		raise
 
 	return
@@ -200,7 +200,7 @@ def _scrape_soup(url,attempts):
 			page = br.open(url)
 			tree = html.fromstring(page.content)
 			return tree
-		except:
+		except Exception:
 			print("Problem while scraping",url)
 			time.sleep(1 + attempt)
 
@@ -211,7 +211,7 @@ def _scrape_selenium(url):
 		from selenium import webdriver
 		import time
 		dr = webdriver.Firefox()
-	except:
+	except Exception:
 		print("Selenium and the Firefox web driver are needed to scrape sites with javascript")
 		return None
 

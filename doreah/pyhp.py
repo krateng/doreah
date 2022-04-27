@@ -211,7 +211,7 @@ def _parse_node(node,d,interpret,directory=None):
 					if attr not in ["with","include"]:
 						subnodes[0].attrs[attr] = _attr(node,attr)
 
-			except:
+			except Exception:
 				print("Could not include",filename)
 				raise
 				subnodes = []
@@ -247,7 +247,7 @@ def _parse_node(node,d,interpret,directory=None):
 			first = True
 			try:
 				elements = eval(_attr(node,"in"),{},d)
-			except:
+			except Exception:
 				# allow invalid expressions in for loops, just ignore them
 				elements = []
 			for element in elements:
@@ -337,7 +337,7 @@ def _parse_node(node,d,interpret,directory=None):
 					vname = v[1:-1]
 					try:
 						value = value.replace(v,interpret(eval(vname,{},d)))
-					except:
+					except Exception:
 						pass
 						print("Error parsing:",v,"in attribute")
 

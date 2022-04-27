@@ -94,7 +94,7 @@ class Directory:
 	def __getitem__(self,node):
 		try:
 			return self.folderdict[node]
-		except:
+		except Exception:
 			os.makedirs(os.path.join(self.fullpath,node))
 			self.folderdict[node] = {}
 			return self.folderdict[node]

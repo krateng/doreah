@@ -177,7 +177,7 @@ class Configuration:
 #		ext = self.configfile.split(".")[-1].lower()
 #		try:
 #			formats.loaders[ext].write_file(self.configfile,self.usersettings)
-#		except:
+#		except Exception:
 #			print("Could not write file",self.configfile)
 #			raise
 
@@ -237,7 +237,7 @@ class types:
 
 		def from_env_string(self,input):
 			try: return int(input)
-			except: return None
+			except Exception: return None
 
 	class String(SettingType):
 		regex = "([^'\"]*)"
