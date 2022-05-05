@@ -146,7 +146,7 @@ class INIHandler(GenericHandler):
 
 	def load_file(self,filename):
 		try:
-			cfg = configparser.ConfigParser()
+			cfg = configparser.ConfigParser(interpolation=None)
 			cfg.read(filename)
 			try:
 				return self.parse_dict_values(cfg['MALOJA'])
@@ -157,11 +157,11 @@ class INIHandler(GenericHandler):
 				return self.text_to_data("[MALOJA]\n\n" + fd.read())
 
 	def text_to_data(self,txt):
-		cfg = configparser.ConfigParser()
+		cfg = configparser.ConfigParser(interpolation=None)
 		cfg.read_string(txt)
 		return self.parse_dict_values(cfg['MALOJA'])
 
 	def write_descriptor(self,descriptor,data):
-		cfg = configparser.ConfigParser()
+		cfg = configparser.ConfigParser(interpolation=None)
 		cfg['MALOJA'] = data
 		cfg.write(descriptor)
