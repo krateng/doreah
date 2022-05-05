@@ -1,6 +1,6 @@
 [project]
 name = "doreah"
-version = "1.9.2"
+version = "1.9.3"
 description = "Small toolkit of utilities for python projects"
 readme = "./README.md"
 requires-python = ">=3.6"
