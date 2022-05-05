@@ -9,14 +9,18 @@ class DiskDict(dict):
 	"""This object acts as a dictionary with persistence. It is not meant for big data,
 	but simple configuration files and such. Keys are always strings and case-insensitive."""
 
-	def __init__(self,filename,readonly=False):
+	def __init__(self,filename,readonly=False,discard_none=False):
 		self.filename = filename
 		self.internal_dict = {}
 		self.handler = get_handler(filename)
 		self.readonly = readonly
+		self.discard_none = discard_none
 
 		if os.path.exists(self.filename):
 			self._sync_from_disk()
+
+		if self.discard_none:
+			self.internal_dict = {k:v for k,v in self.internal_dict.items() if v is not None}
 
 
 		try:

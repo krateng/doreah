@@ -35,7 +35,7 @@ class Configuration:
 		self.names = {k:flatten[k][1] for k in flatten}
 		self.descs = {k:flatten[k][3] for k in flatten if len(flatten[k]) > 3}
 
-		self.usersettings = DiskDict(filename=configfile)
+		self.usersettings = DiskDict(filename=configfile,discard_none=True)
 		self.environment = {}
 		self.defaults = {k:flatten[k][2] for k in flatten}
 		#self.expire = {k:flatten[k][3] if len(flatten[k])>3 else -1 for k in flatten}
