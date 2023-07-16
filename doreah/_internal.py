@@ -36,7 +36,7 @@ def gopen(filepath,mode):
 	directory = os.path.dirname(filepath)
 	os.makedirs(directory, exist_ok=True)
 
-	return open(filepath,mode)
+	return open(filepath,mode,encoding="utf-8")
 
 
 
