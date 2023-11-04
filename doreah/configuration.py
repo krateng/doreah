@@ -329,6 +329,6 @@ class types:
 			return input in [True,False]
 
 		def from_env_string(self,input):
-			if input.lower() in ['true','yes','y','on']: return True
-			if input.lower() in ['false','no','n','off']: return False
+			if input.lower() in ['true','yes','y','on','1']: return True
+			if input.lower() in ['false','no','n','off','0']: return False
 			return None
