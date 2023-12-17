@@ -3,7 +3,6 @@ __all__ = [
 	"auth",
 	"control",
 	"database",
-	"datatypes",
 	"io",
 	"logging",
 	"packageutils",
