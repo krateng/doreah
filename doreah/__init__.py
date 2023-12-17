@@ -7,8 +7,7 @@ __all__ = [
 	"logging",
 	"packageutils",
 	"persistence",
-	"regular",
-	"settings",
+	"regular"
 
 ]
 
