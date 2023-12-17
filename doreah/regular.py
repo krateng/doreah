@@ -1,44 +1,32 @@
 from threading import Thread, Timer
 import datetime
-import random
 import time
-
-from ._internal import DEFAULT, defaultarguments, gopen, DoreahConfig
-
-
-
-config = DoreahConfig("regular",
-	offset=0
-)
-
-def tz():
-	return datetime.timezone(offset=datetime.timedelta(hours=config["offset"]))
-
 
 
 intervals = {
 	'yearly':{
-		'getnext':lambda now:datetime.datetime(now.year+1,1,1,tzinfo=tz()),
+		'getnext':lambda now:datetime.datetime(now.year+1,1,1),
 		'functions':[]
 	},
 	'monthly':{
-		'getnext':lambda now:datetime.datetime(now.year,now.month + 1,1,tzinfo=tz()) if now.month != 12 else datetime.datetime(now.year+1,1,1,tzinfo=tz()),
+		'getnext':lambda now:datetime.datetime(now.year,now.month + 1,1) if now.month != 12 else datetime.datetime(now.year+1,1,1),
 		'functions':[]
 	},
 	'daily':{
-		'getnext':lambda now:datetime.datetime(now.year,now.month,now.day,tzinfo=tz()) + datetime.timedelta(days=1),
+		'getnext':lambda now:datetime.datetime(now.year,now.month,now.day) + datetime.timedelta(days=1),
 		'functions':[]
 	},
 	'hourly':{
-		'getnext':lambda now:datetime.datetime(now.year,now.month,now.day,now.hour,tzinfo=tz()) + datetime.timedelta(hours=1),
+		'getnext':lambda now:datetime.datetime(now.year,now.month,now.day,now.hour) + datetime.timedelta(hours=1),
 		'functions':[]
 	},
 	# just for testing
 	'constantly':{
-		'getnext':lambda now:datetime.datetime.now(tz=tz()) + datetime.timedelta(seconds=1),
+		'getnext':lambda now:datetime.datetime.now() + datetime.timedelta(seconds=1),
 		'functions':[]
 	}
 }
+
 
 # init daemon for each interval
 # spawns all runs, then goes to sleep until next time
@@ -46,7 +34,7 @@ def doreah_regular_daemon(interval):
 	i = 0
 	while True:
 		i += 1
-		now = datetime.datetime.now(tz=tz())
+		now = datetime.datetime.now()
 		next = intervals[interval]['getnext'](now)
 
 		wait = int(next.timestamp() - now.timestamp()) + 5
@@ -56,12 +44,12 @@ def doreah_regular_daemon(interval):
 			try:
 				t = Thread(target=f['function'],args=f['args'],kwargs=f['kwargs'])
 				t.daemon = False
-				t.setName(f"doreah-regular-{interval}-loop{i}-{f['function'].__name__}")
+				t.name = f"doreah-regular-{interval}-loop{i}-{f['function'].__name__}"
 				t.start()
-				#f['function'](*f['args'],**f['kwargs'])
 			except Exception as e:
 				print(e)
 			time.sleep(2)
+
 
 # spawns above init daemons if any functions actually need it
 def spawn_all_needed():
@@ -71,7 +59,7 @@ def spawn_all_needed():
 		if len(data['functions']) > 0 and not data.get('thread'):
 			data['thread'] = Thread(target=doreah_regular_daemon,kwargs={'interval':interval})
 			data['thread'].daemon = True
-			data['thread'].setName(f"doreah-regular-{interval}-init")
+			data['thread'].name = f"doreah-regular-{interval}-daemon"
 			data['thread'].start()
 
 
@@ -83,17 +71,18 @@ def run_regularly(interval,func):
 		'kwargs':{}
 	}
 
+	# add to list
+	intervals[interval]['functions'].append(functioninfo)
+	spawn_all_needed()
+
 	# run it once
 	t = Timer(5,**functioninfo)
 	t.daemon = True
 	t.start()
 
-	# add to list
-	intervals[interval]['functions'].append(functioninfo)
-	spawn_all_needed()
-
 	# return unchanged function
 	return func
+
 
 def repeat_regularly(interval,func):
 
@@ -105,12 +94,12 @@ def repeat_regularly(interval,func):
 			'kwargs':kwargs
 		}
 
-		# execute function
-		func(*args,**kwargs)
-
 		# add original function to list, with args and kwargs from first invocation
 		intervals[interval]['functions'].append(functioninfo)
 		spawn_all_needed()
+
+		# execute function once
+		func(*args,**kwargs)
 
 	return self_scheduling_func
 
