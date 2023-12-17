@@ -1,17 +1,8 @@
-from ._internal import DEFAULT, defaultarguments, DoreahConfig
 from .io import col
-import zipfile
 import os
-import urllib.request
-import shutil
-import distutils.dir_util
 import sys
 import subprocess
 import signal
-#import inspect
-
-
-config = DoreahConfig("control")
 
 
 def cmd_handle(shortcuts,flags):
@@ -26,8 +17,6 @@ def cmd_handle(shortcuts,flags):
 			kwargs[cmd[0][2:]] = True
 			cmd = cmd[1:]
 		elif cmd[0].startswith("-") and cmd[0][1:] in shortcuts:
-			#kwargs[shortcuts[cmd[0][1:]]] = cmd[1]
-			#cmd = cmd[2:]
 			# simply convert to real option and run again
 			cmd[0] = "--" + shortcuts[cmd[0][1:]]
 		elif cmd[0].startswith("--"):
@@ -38,6 +27,7 @@ def cmd_handle(shortcuts,flags):
 			cmd = cmd[1:]
 
 	return args,kwargs
+
 
 def mainfunction(shortcuts={},flags=[],shield=False):
 	def decorator(func):
@@ -76,16 +66,17 @@ class Controller:
 			"stop":self.stop
 		}
 
-
-	def getInstance(self):
+	def get_instance(self):
 		try:
-			output = subprocess.check_output(["pidof",self.processname])
+			output = subprocess.check_output(["pgrep","-f",f"{self.processname}$"])
+			# this is necessary for freebsd, otherwise -x and just the name should work
 			pid = int(output)
 			return pid
 		except Exception:
 			return None
+
 	def is_running(self):
-		return getInstance() is not None
+		return self.get_instance() is not None
 
 	def start(self):
 		try:
@@ -96,12 +87,12 @@ class Controller:
 			return False
 
 	def restart(self):
-		wasrunning = stop()
-		start()
+		wasrunning = self.stop()
+		self.start()
 		return wasrunning
 
 	def stop(self):
-		pid = getInstance()
+		pid = self.get_instance()
 		if pid is None:
 			print(self.prettyname + " is not running")
 			return False
