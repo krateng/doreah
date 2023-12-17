@@ -12,7 +12,6 @@ __all__ = [
 	"persistence",
 	"regular",
 	"settings",
-	"timing"
 
 ]
 
