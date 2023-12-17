@@ -16,7 +16,7 @@ class AbstractPath:
 	def parent(self):
 		try:
 			parenttype = self.IS_IN
-		except:
+		except Exception:
 			parenttype = self.__class__
 		return parenttype(self.path[:-1])
 

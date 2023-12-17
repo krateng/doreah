@@ -1,22 +1,26 @@
 """Module that offers data structures that are kept persistent on the file system"""
 
 import os, shutil
-import yaml, json
-import re
+import yaml, json, configparser
+import re, ast
 
 
 class DiskDict(dict):
 	"""This object acts as a dictionary with persistence. It is not meant for big data,
 	but simple configuration files and such. Keys are always strings and case-insensitive."""
 
-	def __init__(self,filename,readonly=False):
+	def __init__(self,filename,readonly=False,discard_none=False):
 		self.filename = filename
 		self.internal_dict = {}
 		self.handler = get_handler(filename)
 		self.readonly = readonly
+		self.discard_none = discard_none
 
 		if os.path.exists(self.filename):
 			self._sync_from_disk()
+
+		if self.discard_none:
+			self.internal_dict = {k:v for k,v in self.internal_dict.items() if v is not None}
 
 
 		try:
@@ -118,51 +122,46 @@ class JSONHandler(GenericHandler):
 class INIHandler(GenericHandler):
 	extensions = ["ini"]
 
-	boolx = lambda x: True if x.lower() in ['true','yes','y'] else False if x.lower() in ['false','no','n'] else None
-	nullx = lambda x: None
-	regex_key = 					re.compile(r"([a-zA-Z][\w]+)"	) # at least 2 characters
-	regex_values = [
-		("singlequoted",	str,	re.compile(r"'([^']*)'")),
-		("doublequoted",	str,	re.compile(r'"([^"]*)"')),
-		("boolean",			boolx,	re.compile(r"(false|no|n|true|yes|y)",re.IGNORECASE)),
-		("null",			nullx,	re.compile(r"(none|null)",re.IGNORECASE)),
-		("identifier",		str,	re.compile(r"([a-zA-Z][\w]+)")),
-		("integer",			int,	re.compile(r"([-+]?[\d]+)")),
-		("float",			float,	re.compile(r"([\d]+[.]?[\d]*)"))
+	special_identifiers = [
+		(True,['true','yes','y']),
+		(False,['false','no','n']),
+		(None,['none','null'])
 	]
-	regex_separator = 				re.compile(r"[ \t]*=[ \t]*")
 
-	regex_value = re.compile("(" + "|".join(exp.pattern for nm,ty,exp in regex_values) + ")")
-	regex_fullline = re.compile("".join(exp.pattern for exp in [
-		regex_key,
-		regex_separator,
-		regex_value
-	]))
 
+	def parse_dict_values(self,inputdict):
+		outputdict = {}
+		for key,val in inputdict.items():
+			for resolve_to,values in self.special_identifiers:
+				if val.lower() in values:
+					val = resolve_to
+					break
+			else:
+				try:
+					val = ast.literal_eval(val)
+				except Exception:
+					val = val # just use as string
+			outputdict[key] = val
+		return outputdict
+
+	def load_file(self,filename):
+		try:
+			cfg = configparser.ConfigParser(interpolation=None)
+			cfg.read(filename)
+			try:
+				return self.parse_dict_values(cfg['MALOJA'])
+			except KeyError:
+				return {}
+		except configparser.MissingSectionHeaderError:
+			with open(filename,'r') as fd:
+				return self.text_to_data("[MALOJA]\n\n" + fd.read())
 
 	def text_to_data(self,txt):
-		result = {}
-		for l in txt.split("\n"):
-			match = self.regex_fullline.fullmatch(l)
-			if match:
-				key, val, *_ = match.groups()
-				for nm,ty,exp in self.regex_values:
-					match = exp.fullmatch(val)
-					if match:
-						val = match.groups()[0]
-						result[key] = ty(val)
-						break
+		cfg = configparser.ConfigParser(interpolation=None)
+		cfg.read_string(txt)
+		return self.parse_dict_values(cfg['MALOJA'])
 
-		return result
-
-	def data_to_text(self,data):
-		lines = []
-		for k in data:
-			if isinstance(data[k],str):
-				if '"' not in data[k]: val = f'"{data[k]}"'
-				elif "'" not in data[k]: val = f"'{data[k]}'"
-			else: val = str(data[k])
-			lines.append(k + " = " + val)
-		lines.append("")
-
-		return "\n".join(lines)
+	def write_descriptor(self,descriptor,data):
+		cfg = configparser.ConfigParser(interpolation=None)
+		cfg['MALOJA'] = data
+		cfg.write(descriptor)

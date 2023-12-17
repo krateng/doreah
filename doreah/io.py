@@ -68,7 +68,7 @@ def prompt(msg,types=(str,),default=None,repeat=False,skip=False,secret=False):
 		for t in types:
 			try:
 				return t(inp)
-			except:
+			except Exception:
 				pass
 		print("Not a valid response")
 		if repeat:

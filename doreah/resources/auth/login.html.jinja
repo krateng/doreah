@@ -181,10 +181,10 @@
 
 	<body>
 		<div class="centered_box">
-			<span id="challengeshow" onclick="this.classList.add('hide');document.getElementById('challengeinfo').classList.remove('hide');">Show Challenge</span>
+			<span class="hide" id="challengeshow" onclick="this.classList.add('hide');document.getElementById('challengeinfo').classList.remove('hide');">Show Challenge</span>
 			<span class="hide" id="challengeinfo" style="font-size:60%;cursor:default;">{{ challenge }}</span>
 			<input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" oninput="update()" onkeyup="enterpress(event)" />
-			<input id="response" placeholder="Response" />
+			<input class="hide" id="response" placeholder="Response" />
 			<button id="loginbutton" onclick="auth()">Login</button>
 		</div>
 

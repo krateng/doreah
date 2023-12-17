@@ -35,7 +35,7 @@ class Configuration:
 		self.names = {k:flatten[k][1] for k in flatten}
 		self.descs = {k:flatten[k][3] for k in flatten if len(flatten[k]) > 3}
 
-		self.usersettings = DiskDict(filename=configfile)
+		self.usersettings = DiskDict(filename=configfile,discard_none=True)
 		self.environment = {}
 		self.defaults = {k:flatten[k][2] for k in flatten}
 		#self.expire = {k:flatten[k][3] if len(flatten[k])>3 else -1 for k in flatten}
@@ -53,9 +53,11 @@ class Configuration:
 
 	def update(self,settings):
 		for k in settings:
-			if settings[k] is None: self.usersettings.delitem_nosync(k)
-			else: self.usersettings.setitem_nosync(k,self.types[k].sanitize(settings[k]))
-		self.usersettings._sync_to_disk()
+			if settings[k] is None: del self.usersettings[k]
+			else: self.usersettings[k] = self.types[k].sanitize(settings[k])
+			#if settings[k] is None: self.usersettings.delitem_nosync(k)
+			#else: self.usersettings.setitem_nosync(k,self.types[k].sanitize(settings[k]))
+		#self.usersettings._sync_to_disk()
 
 	def get_setting_info(self,key):
 		return {
@@ -133,7 +135,7 @@ class Configuration:
 				# filename is the setting name
 				if f in self.types:
 					with open(os.path.join(self.extra_dir,f),'r') as fd:
-						self.environment[f] = self.types[f].fromstring(fd.read().split('\n')[0])
+						self.environment[f] = self.types[f].from_env_string(fd.read().split('\n')[0])
 
 		# load read-only settings file
 		for extrafile in self.extra_files:
@@ -155,7 +157,7 @@ class Configuration:
 				if k.startswith(self.env_prefix.upper()):
 					sk = k[len(self.env_prefix):].lower()
 					if sk in self.types:
-						self.environment[sk] = self.types[sk].fromstring(os.environ[k])
+						self.environment[sk] = self.types[sk].from_env_string(os.environ[k])
 			#self.environment = {k[len(self.env_prefix):].lower():os.environ[k] for k in os.environ if k.startswith(self.env_prefix.upper())}
 
 #	def load_from_file(self):
@@ -175,7 +177,7 @@ class Configuration:
 #		ext = self.configfile.split(".")[-1].lower()
 #		try:
 #			formats.loaders[ext].write_file(self.configfile,self.usersettings)
-#		except:
+#		except Exception:
 #			print("Could not write file",self.configfile)
 #			raise
 
@@ -216,7 +218,7 @@ class types:
 			return value
 
 		# parse string inputs
-		def fromstring(self,input):
+		def from_env_string(self,input):
 			return input
 
 	class Integer(SettingType):
@@ -233,9 +235,9 @@ class types:
 		def validate(self,input):
 			return isinstance(input,int) and input >= self.min and input <= self.max
 
-		def fromstring(self,input):
+		def from_env_string(self,input):
 			try: return int(input)
-			except: return None
+			except Exception: return None
 
 	class String(SettingType):
 		regex = "([^'\"]*)"
@@ -295,6 +297,10 @@ class types:
 		def validate(self,input):
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
 
+		def from_env_string(self,input):
+			separator = os.environ.get('PATH_SEPARATOR') or ':'
+			return set(input.split(separator))
+
 	class List(SettingType):
 		default = []
 
@@ -309,6 +315,10 @@ class types:
 		def validate(self,input):
 			return len(input) <= self.maxmembers and len(input) >= self.minmembers and all(self.type.validate(m) for m in input)
 
+		def from_env_string(self,input):
+			separator = os.environ.get('PATH_SEPARATOR') or ':'
+			return input.split(separator)
+
 	class Boolean(SettingType):
 		default = False
 
@@ -318,7 +328,7 @@ class types:
 		def validate(self,input):
 			return input in [True,False]
 
-		def fromstring(self,input):
-			if input.lower() in ['true','yes','y','on']: return True
-			if input.lower() in ['false','no','n','off']: return False
+		def from_env_string(self,input):
+			if input.lower() in ['true','yes','y','on','1']: return True
+			if input.lower() in ['false','no','n','off','0']: return False
 			return None

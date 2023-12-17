@@ -204,7 +204,7 @@ def authenticated_function(alternate=(lambda x,y,z: False),api=False,pass_auth_r
 
 	def decorator(func):
 		def newfunc(*args,**kwargs):
-			auth_check = check(request) or alternate(request,args,kwargs)
+			auth_check = alternate(request,args,kwargs) or check(request)
 
 			if auth_check:
 				if pass_auth_result_as:
@@ -214,11 +214,18 @@ def authenticated_function(alternate=(lambda x,y,z: False),api=False,pass_auth_r
 			else:
 				if api:
 					bottleresponse.status = 403
-					return {"error":"Not allowed"}
+					return {
+						"status":"failure",
+						"error":{
+							'type':'authentication_fail',
+							'desc':"Invalid or missing authentication"
+						}
+					}
 				else:
 					return get_login_page()
 
 		newfunc.__annotations__ = func.__annotations__
+		newfunc.__doc__ = func.__doc__
 		return newfunc
 
 	return decorator

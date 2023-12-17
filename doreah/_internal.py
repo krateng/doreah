@@ -59,7 +59,7 @@ class DoreahConfig:
 			if s is not None: self.configuration.update(s)
 		except OSError:
 			pass
-		except:
+		except Exception:
 			print("Doreah could not read its configuration file. Your application is likely not up to date and uses the old doreah format!")
 
 	def _readpreconfig(self):

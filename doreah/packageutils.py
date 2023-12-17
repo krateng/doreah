@@ -14,7 +14,7 @@ config = DoreahConfig("packageutils",
 try:
 	HOME_DIR = os.environ["XDG_DATA_HOME"].split(":")[0]
 	assert os.path.exists(HOME_DIR)
-except:
+except Exception:
 	HOME_DIR = os.path.join(os.environ["HOME"],".local/share/")
 
 DATA_DIR = None # the actual folder for this package

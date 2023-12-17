@@ -17,7 +17,7 @@ def _ANSICOLOR(code):
 			return _ANSIRGB(*code), _ANSI()
 		else:
 			return "",""
-	except:
+	except Exception:
 		return "",""
 
 colornames = {

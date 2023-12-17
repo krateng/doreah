@@ -48,7 +48,7 @@ class DictStack:
 	def get(self,key):
 		try:
 			return self.__getitem__(key)
-		except:
+		except Exception:
 			return None
 
 	def has_key(self,key):

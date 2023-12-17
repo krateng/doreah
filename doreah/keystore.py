@@ -40,10 +40,16 @@ class KeyStore:
 		self.write_to_file()
 
 	def __iter__(self):
-		return (k for k in self.keys)
+		return (identifier for identifier in self.keys)
 
 	def check_key(self,key):
 		return (key in self.keys.values())
+
+	def check_and_identify_key(self,key):
+		for identifier in self.keys:
+			if self.keys[identifier] == key:
+				return identifier
+		return False
 
 	def generate_key(self,identifier):
 		key = randomstring(config['key_length'])

@@ -63,7 +63,7 @@ def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
 			module = getattr(module,"__logmodulename__",module.__name__)
 			if config["only_leaf_module"]: module = module.split(".")[-1]
 			if module == "__main__": module = config["defaultmodule"]
-		except:
+		except Exception:
 			module = "interpreter"
 
 	global _locked, _queue
@@ -117,7 +117,7 @@ def trim(filename):
 				delete = int(len(lines)/2)
 			with open(filename,"w") as targetfile:
 				targetfile.writelines(lines[delete:])
-	except:
+	except Exception:
 		pass
 
 

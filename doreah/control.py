@@ -48,7 +48,9 @@ def mainfunction(shortcuts={},flags=[],shield=False):
 			for var in kwargs:
 				if var in func.__annotations__:
 					kwargs[var] = func.__annotations__[var](kwargs[var])
-			return func(*args,**kwargs)
+			result = func(*args,**kwargs)
+			# Truthy return value indicates success -> exit code 0
+			return 0 if result else 1
 
 		# if this module is the script, call that function immediately
 		if func.__module__ == "__main__":
@@ -80,7 +82,7 @@ class Controller:
 			output = subprocess.check_output(["pidof",self.processname])
 			pid = int(output)
 			return pid
-		except:
+		except Exception:
 			return None
 	def is_running(self):
 		return getInstance() is not None
@@ -89,7 +91,7 @@ class Controller:
 		try:
 			p = subprocess.Popen(["python3","-m",self.pkgname + ".main"],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
 			print(col["green"](self.prettyname + " started!") + " PID: " + str(p.pid))
-		except:
+		except Exception:
 			print("Error while starting " + self.prettyname + ".")
 			return False
 
