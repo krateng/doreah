@@ -1,130 +1,103 @@
 import datetime
 import inspect
 import os
-import shutil
 
-from ._internal import defaultarguments, gopen, DoreahConfig
+from ._internal import gopen
 from ._color import _ANSICOLOR
 
 
-_queue = []
-_locked = False
+class Logger:
+	def __init__(self,logfolder="./logs",timeformat="%Y/%m/%d %H:%M:%S",defaultmodule="main",only_leaf_module=True,verbosity=0,maxsize=4*1024*1024):
+		self.logfolder = logfolder
+		self.timeformat = timeformat
+		self.defaultmodule = defaultmodule
+		self.only_leaf_module = only_leaf_module
+		self.verbosity = verbosity
+		self.maxsize = maxsize
+
+		self.queue = []
+		self.locked = False
+
+	def log(self,*entries,module=None,indent=0,importance=0,color=None):
+		"""Logs all supplied arguments, separate line for each. Only writes to logfile if importance value is lower than the set verbosity value.
+
+		:param string entries: All log entries, one line per entry
+		:param string module: Custom category. Log entry will be prepended by this string in the console and be written to this file on disk. Defaults to actual name of the python module.
+		:param integer indent: Indent to be added to entry
+		:param integer importance: Low means important. If this value is higher than the verbosity, entry will not be shown on console.
+		:param string color: Color-codes console output. Can be a hex string, a RGB tuple or the name of a color."""
+
+		now = datetime.datetime.utcnow().strftime(config["timeformat"])
 
 
-# logfolder			folder to store logfiles in
-# timeformat		strftime format for log files
-# defaultmodule		name for the main running script
-# verbosity			higher means more (less important) messages are shown on console
-config = DoreahConfig("logging",
-	logfolder="logs",
-	timeformat="%Y/%m/%d %H:%M:%S",
-	defaultmodule="main",
-	only_leaf_module=True,
-	verbosity=0,
-	maxsize=4194304
-)
+		# log() can be used to add empty line
+		if len(entries) == 0: entries = ("",)
 
+		# make it easier to log data structures and such
+		entries = tuple([str(msg) for msg in entries])
 
+		# indent
+		prefix = "\t" * indent
 
-def log(*entries,module=None,heading=None,indent=0,importance=0,color=None):
-	"""Logs all supplied arguments, separate line for each. Only writes to logfile if importance value is lower than the set verbosity value.
+		# module name
+		if module is None:
+			try:
+				moduleobj = inspect.getmodule(inspect.stack()[1][0])
+				module = getattr(moduleobj,"__logmodulename__",moduleobj.__name__)
+				if self.only_leaf_module: module = module.split(".")[-1]
+				if module == "__main__": module = self.defaultmodule
+			except Exception:
+				module = "interpreter"
 
-	:param string entries: All log entries, one line per entry
-	:param string module: Custom category. Log entry will be prepended by this string in the console and be written to this file on disk. Defaults to actual name of the python module.
-	:param integer heading: Heading category. Headings will be visually distinguished from normal entries.
-	:param integer indent: Indent to be added to entry
-	:param integer importance: Low means important. If this value is higher than the verbosity, entry will not be shown on console.
-	:param string color: Color-codes console output. Can be a hex string, a RGB tuple or the name of a color."""
+		self.queue.append({
+			'time':now,
+			'prefix':prefix,
+			'color':color,
+			'msg':msg,
+			'module':module,
+			'console':(importance <= self.verbosity)
+		})
 
-	now = datetime.datetime.utcnow().strftime(config["timeformat"])
+		if self.locked:
+			pass
+		else:
+			self.flush()
 
+	def flush(self):
+		"""Outputs and empties the complete backlog."""
+		for entry in self.queue:
+			# console output
+			if entry["console"]:
+				colorprefix,colorsuffix = _ANSICOLOR(entry['color'])
+				print(f"{colorprefix}[{entry['module']}] {entry['prefix']}{entry['msg']}{colorsuffix}")
 
-	colorprefix,colorsuffix = _ANSICOLOR(color)
+			# file output
+			if self.logfolder is not None:
+				logfilename = f"{self.logfolder}/{entry['module']}.log"
+				#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
+				with gopen(logfilename,"a") as logfile:
+					logfile.write(f"{entry['time']}  {entry['prefix']}{entry['msg']}\n")
+				trim(logfilename)
 
-	# log() can be used to add empty line
-	if len(entries) == 0: entries = ("",)
+		self.queue = []
 
-	# make it easier to log data structures and such
-	entries = tuple([str(msg) for msg in entries])
+	def trim(self,filename):
 
-	# header formating
-	if heading == 2:
-		entries = ("","","####") + entries + ("####","")
-	elif heading == 1:
-		entries = ("","","","# # # # #","") + entries + ("","# # # # #","","")
-
-	# indent
-	prefix = "\t" * indent
-
-	# module name
-	if module is None:
 		try:
-			module = inspect.getmodule(inspect.stack()[1][0])
-			module = getattr(module,"__logmodulename__",module.__name__)
-			if config["only_leaf_module"]: module = module.split(".")[-1]
-			if module == "__main__": module = config["defaultmodule"]
+			#sanity check for old version logfiles
+			if os.path.getsize(filename) > (self.maxsize * 4):
+				os.remove(filename)
+
+			elif os.path.getsize(filename) > self.maxsize:
+				with open(filename,"r") as sourcefile:
+					lines = sourcefile.readlines()
+					delete = int(len(lines)/2)
+				with open(filename,"w") as targetfile:
+					targetfile.writelines(lines[delete:])
+
 		except Exception:
-			module = "interpreter"
-
-	global _locked, _queue
-	if _locked:
-		for msg in entries:
-			_queue.append({"time":now,"prefix":prefix,"msg":msg,"module":module,"console":(importance <= config["verbosity"])})
-	else:
-		# console output
-		if (importance <= config["verbosity"]):
-			for msg in entries:
-				print(colorprefix + "[" + module + "] " + prefix + msg + colorsuffix)
-
-		# file output
-		if config["logfolder"] is not None:
-			logfilename = config["logfolder"] + "/" + module + ".log"
-			#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
-			with gopen(logfilename,"a") as logfile:
-				for msg in entries:
-					logfile.write(now + "  " + prefix + msg + "\n")
-			trim(logfilename)
+			pass
 
 
-def flush():
-	"""Outputs and empties the complete backlog."""
-	global _queue
-	for entry in _queue:
-		# console output
-		if entry["console"]:
-			print("[" + entry["module"] + "] " + entry["prefix"] + entry["msg"])
-
-		# file output
-		if config["logfolder"] is not None:
-			logfilename = config["logfolder"] + "/" + entry["module"] + ".log"
-			#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
-			with gopen(logfilename,"a") as logfile:
-				logfile.write(entry["time"] + "  " + entry["prefix"] + entry["msg"] + "\n")
-			trim(logfilename)
-
-	_queue = []
-
-def trim(filename):
-
-	try:
-		#sanity check for old version logfiles
-		if os.path.getsize(filename) > config["maxsize"] * 4:
-			os.remove(filename)
-
-		elif os.path.getsize(filename) > config["maxsize"]:
-			with open(filename,"r") as sourcefile:
-				lines = sourcefile.readlines()
-				delete = int(len(lines)/2)
-			with open(filename,"w") as targetfile:
-				targetfile.writelines(lines[delete:])
-	except Exception:
-		pass
-
-
-# Quicker way to add header
-def logh1(*args,**kwargs):
-	"""Logs a top-level header. Otherwise, same arguments as :func:`log`"""
-	return log(*args,**kwargs,header=1)
-def logh2(*args,**kwargs):
-	"""Logs a second-level header. Otherwise, same arguments as :func:`log`"""
-	return log(*args,**kwargs,header=2)
+defaultlogger = Logger()
+log = defaultlogger.log
