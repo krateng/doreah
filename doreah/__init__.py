@@ -4,7 +4,6 @@ __all__ = [
 	"control",
 	"database",
 	"datatypes",
-	"filesystem",
 	"io",
 	"logging",
 	"packageutils",
