@@ -1,7 +1,6 @@
 
 __all__ = [
 	"auth",
-	"caching",
 	"control",
 	"database",
 	"datatypes",
@@ -11,12 +10,9 @@ __all__ = [
 	"logging",
 	"packageutils",
 	"persistence",
-	"pyhp",
 	"regular",
-	"scraping"
 	"settings",
-	"timing",
-	"tsv"
+	"timing"
 
 ]
 
