@@ -4,11 +4,9 @@ from ._color import _ANSICOLOR
 import sys
 from getpass import getpass
 
-config = DoreahConfig("io",
-	yesvalues=["y","yes","yea","1","positive","true"],
-	novalues=["n","no","nay","0","negative","false"]
-)
 
+YESVALUES = ["y","yes","yea","1","positive","true"]
+NOVALUES = ["n","no","nay","0","negative","false"]
 
 
 def ask(msg,default=True,repeat=False,skip=False):
@@ -33,9 +31,9 @@ def ask(msg,default=True,repeat=False,skip=False):
 	print(msg,a)
 
 	inp = input()
-	if inp.lower() in config["yesvalues"]:
+	if inp.lower() in YESVALUES:
 		return True
-	elif inp.lower() in config["novalues"]:
+	elif inp.lower() in NOVALUES:
 		return False
 	elif inp == "" and default is not None:
 		return default
@@ -46,6 +44,7 @@ def ask(msg,default=True,repeat=False,skip=False):
 		else:
 			return None
 
+
 def prompt(msg,types=(str,),default=None,repeat=False,skip=False,secret=False):
 	"""Offers a prompt that allows custom input.
 
@@ -54,7 +53,7 @@ def prompt(msg,types=(str,),default=None,repeat=False,skip=False,secret=False):
 	:param default: Response that should be assumed if no input is given.
 	:param boolean repeat: Whether the prompt should be repeated until a valid response is acquired. Otherwise, will return None.
 	:param boolean skip: Literally just skips the whole thing and returns default anyway.
-	:param boolean hide: Don't show user input (e.g. passwords)
+	:param boolean secret: Don't show user input (e.g. passwords)
 	:return: User's choice, or None if invalid response and no default
 	"""
 
@@ -68,7 +67,7 @@ def prompt(msg,types=(str,),default=None,repeat=False,skip=False,secret=False):
 		for t in types:
 			try:
 				return t(inp)
-			except Exception:
+			except (TypeError, ValueError):
 				pass
 		print("Not a valid response")
 		if repeat:
@@ -90,6 +89,8 @@ def ellipsis(txt,length,padded=False):
 			while len(txt) < length: txt += " "
 		return txt
 
+
+
 ###
 ## COLORED OUTPUT
 ####
@@ -97,11 +98,12 @@ def ellipsis(txt,length,padded=False):
 # weird construct to enable quick function calls like col["yellow"](txt)
 class _Col:
 	def __getitem__(self, color):
-		def colored(txt,color=color):
-			pre,post = _ANSICOLOR(color)
+		def colored(txt,c=color):
+			pre,post = _ANSICOLOR(c)
 			return pre + str(txt) + post
 
 		return colored
+
 col = _Col()
 
 
@@ -158,6 +160,7 @@ class ProgressBar:
 		#self.step = "Done!"
 			self.print()
 			self.finished = True
+
 
 class NestedProgressBar(ProgressBar):
 	def __init__(self,max,prefix="",decimals=0,length=100,fill="█",manual=False):
