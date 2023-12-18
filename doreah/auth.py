@@ -18,6 +18,8 @@ from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey
 
 SESSION_EXPIRE = 3600000
 TOKEN_LENGTH = 64
+DEFAULT_USER = 'admin'
+DEFAULT_PASSWORD = 'admin'
 
 
 Base = declarative_base()
@@ -66,9 +68,8 @@ class Session(Base):
 
 
 class AuthManager:
-	def __init__(self,cookieprefix="doreahauth",defaultpw="admin",dbfile="auth.sqlite",stylesheets=(),singleuser=False):
+	def __init__(self,cookieprefix="doreahauth",defaultpw=DEFAULT_PASSWORD,dbfile="auth.sqlite",stylesheets=(),singleuser=False):
 		self.cookieprefix = cookieprefix
-		self.defaultpw = defaultpw
 		self.dbfile = dbfile
 		self.stylesheets = stylesheets
 		self.singleuser = singleuser
@@ -87,7 +88,7 @@ class AuthManager:
 
 		if singleuser:
 			with self.session() as sess:
-				user = self.create_user('user','wat')
+				user = sess.query(User).where(User.handle == DEFAULT_USER).first() or self.create_user(handle=DEFAULT_USER,password=defaultpw)
 			self.defaultuser = user
 
 		self.authapi.post('authenticate')(self.get_token)
@@ -115,7 +116,7 @@ class AuthManager:
 
 	def get_token(self,user,password):
 		if self.singleuser:
-			user = 'user'
+			user = DEFAULT_USER
 
 		result = self.login(user,password)
 		if result:
@@ -141,7 +142,6 @@ class AuthManager:
 
 	def check_request(self,request):
 		token = request.get_cookie(self.cookie_token_name)
-		print('cookie',token)
 		if token is None: return False
 		if user := self.check_session(token):
 			return {'doreah_native_auth_check':True,'user':user}
@@ -160,9 +160,7 @@ class AuthManager:
 
 		def decorator(func):
 			def newfunc(*args,**kwargs):
-				print('check request',request)
 				auth_check = alternate(request,args,kwargs) or self.check_request(request)
-				print(auth_check)
 
 				if auth_check:
 					if pass_auth_result_as:
