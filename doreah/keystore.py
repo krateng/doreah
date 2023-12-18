@@ -5,11 +5,7 @@ import random
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 
-config = DoreahConfig("keystore",
-	key_length=64
-)
-
-JINJAENV = Environment(
+jinjaenv = Environment(
 	loader=PackageLoader('doreah', 'resources/keystore'),
 	autoescape=select_autoescape(['html', 'xml'])
 )
@@ -25,7 +21,7 @@ class KeyStore:
 	"""Object that represents keys and their identifiers stored by a user. They are accessible via a web interface
 	and written to a permanent file."""
 
-	def __init__(self,file="keystore.yml",save_endpoint="/keys"):
+	def __init__(self,file="keystore.yml",save_endpoint="/keys",key_length=64):
 		self.file = file
 		self.keys = {}
 		self.save_endpoint = save_endpoint
@@ -52,7 +48,7 @@ class KeyStore:
 		return False
 
 	def generate_key(self,identifier):
-		key = randomstring(config['key_length'])
+		key = randomstring(self.key_length)
 		self.keys[identifier] = key
 		self.write_to_file()
 		return key
@@ -84,5 +80,5 @@ class KeyStore:
 			yaml.dump(self.keys,filed)
 
 	def html(self):
-		template = JINJAENV.get_template("settings.jinja")
+		template = jinjaenv.get_template("settings.jinja")
 		return template.render({"keystore":self})
