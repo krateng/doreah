@@ -1,7 +1,4 @@
-from ._internal import DEFAULT, defaultarguments, DoreahConfig
 from ._color import _ANSICOLOR
-
-import sys
 from getpass import getpass
 
 

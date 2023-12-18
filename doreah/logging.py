@@ -27,8 +27,7 @@ class Logger:
 		:param integer importance: Low means important. If this value is higher than the verbosity, entry will not be shown on console.
 		:param string color: Color-codes console output. Can be a hex string, a RGB tuple or the name of a color."""
 
-		now = datetime.datetime.utcnow().strftime(config["timeformat"])
-
+		now = datetime.datetime.utcnow().strftime(self.timeformat)
 
 		# log() can be used to add empty line
 		if len(entries) == 0: entries = ("",)
@@ -49,14 +48,15 @@ class Logger:
 			except Exception:
 				module = "interpreter"
 
-		self.queue.append({
-			'time':now,
-			'prefix':prefix,
-			'color':color,
-			'msg':msg,
-			'module':module,
-			'console':(importance <= self.verbosity)
-		})
+		for msg in entries:
+			self.queue.append({
+				'time':now,
+				'prefix':prefix,
+				'color':color,
+				'msg':msg,
+				'module':module,
+				'console':(importance <= self.verbosity)
+			})
 
 		if self.locked:
 			pass
@@ -77,7 +77,7 @@ class Logger:
 				#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
 				with gopen(logfilename,"a") as logfile:
 					logfile.write(f"{entry['time']}  {entry['prefix']}{entry['msg']}\n")
-				trim(logfilename)
+				self.trim(logfilename)
 
 		self.queue = []
 
