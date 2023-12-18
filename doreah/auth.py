@@ -11,15 +11,21 @@ from bottle import request, HTTPResponse, redirect
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import sessionmaker, relationship, scoped_session
 import sqlalchemy as sql
-from sqlalchemy import Column, Integer, String, LargeBinary, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, LargeBinary, ForeignKey
 
 
 SESSION_EXPIRE = 3600000
 TOKEN_LENGTH = 64
 DEFAULT_USER = 'admin'
 DEFAULT_PASSWORD = 'admin'
+
+
+jinjaenv = Environment(
+	loader=PackageLoader('doreah', 'resources/auth'),
+	autoescape=select_autoescape(['html', 'xml'])
+)
 
 
 Base = declarative_base()
@@ -31,6 +37,7 @@ class User(Base):
 	salt = Column(LargeBinary)
 	hash = Column(String)
 	sessions = relationship("Session",back_populates="user")
+	factory = Column(Boolean)
 
 	def authenticate(self,password):
 		if not password: return False
@@ -45,6 +52,7 @@ class User(Base):
 		hashed_password = bcrypt.hashpw(password_bytes, salt)
 		self.salt = salt
 		self.hash = hashed_password
+		self.factory = False
 		return True
 
 
@@ -68,50 +76,70 @@ class Session(Base):
 
 
 class AuthManager:
-	def __init__(self,cookieprefix="doreahauth",defaultpw=DEFAULT_PASSWORD,dbfile="auth.sqlite",stylesheets=(),singleuser=False):
+	def __init__(self,cookieprefix="doreahauth",dbfile="auth.sqlite",stylesheets=(),singleuser=False):
 		self.cookieprefix = cookieprefix
 		self.dbfile = dbfile
 		self.stylesheets = stylesheets
 		self.singleuser = singleuser
 
-		self.jinjaenv = Environment(
-			loader=PackageLoader('doreah', 'resources/auth'),
-			autoescape=select_autoescape(['html', 'xml'])
-		)
+
 
 		self.cookie_token_name = f"{self.cookieprefix}_sessiontoken"
 		self.authapi = EAPI(path="auth",delay=True)
 
 		self.engine = sql.create_engine(f"sqlite:///{self.dbfile}", echo = False)
 		Base.metadata.create_all(self.engine)
-		self.session = sessionmaker(bind=self.engine)
+		session_factory = sessionmaker(bind=self.engine)
+		self.ScopedSession = scoped_session(session_factory)
 
 		if singleuser:
-			with self.session() as sess:
-				user = sess.query(User).where(User.handle == DEFAULT_USER).first() or self.create_user(handle=DEFAULT_USER,password=defaultpw)
-			self.defaultuser = user
+			self.defaultuser = self.get_default_user()
 
 		self.authapi.post('authenticate')(self.get_token)
 
-	def create_user(self,handle,password):
-		with self.session() as sess:
-			user = User(handle=handle)
-			user.set_password(password)
-			sess.add(user)
-			sess.commit()
+	def get_default_user(self):
+		if self.singleuser:
+			dbsess = self.ScopedSession()
+			user = dbsess.query(User).where(User.handle == DEFAULT_USER).first() or self.create_user(handle=DEFAULT_USER,password=DEFAULT_PASSWORD,factory=True)
+			dbsess.add(user)
+			dbsess.refresh(user)
+			dbsess.commit()
+			return user
+		return None
+
+	def create_user(self,handle,password,factory=False):
+		dbsess = self.ScopedSession()
+		user = User(handle=handle)
+		user.set_password(password)
+		user.factory = factory
+		dbsess.add(user)
+		dbsess.commit()
 		return user
 
+	def change_pw(self,password,handle=None):
+		dbsess = self.ScopedSession()
+		if self.singleuser:
+			user = self.defaultuser
+		else:
+			user = dbsess.query(User).where(User.handle==handle).first()
+		user.set_password(password)
+		dbsess.commit()
+
+	def still_has_factory_default_user(self):
+		if not self.singleuser: return False
+		return self.get_default_user().factory
+
 	def login(self,handle,password):
-		with self.session() as sess:
-			user = sess.query(User).where(User.handle==handle).first()
-			if user.authenticate(password):
-				usersession = Session(user=user)
-				sess.add(usersession)
-				sess.commit()
-				return usersession.session_token
+		dbsess = self.ScopedSession()
+		user = dbsess.query(User).where(User.handle==handle).first()
+		if user.authenticate(password):
+			usersession = Session(user=user)
+			dbsess.add(usersession)
+			dbsess.commit()
+			return usersession.session_token
 
 	def get_login_page(self):
-		template = self.jinjaenv.get_template("login.html.jinja")
+		template = jinjaenv.get_template("login.html.jinja")
 		return template.render({"lock_user":self.singleuser,"css":self.stylesheets})
 
 	def get_token(self,user,password):
@@ -133,11 +161,12 @@ class AuthManager:
 			}
 
 	def check_session(self,token):
-		with self.session() as sess:
-			session = sess.query(Session).where(Session.session_token==token).first()
-			if session:
-				session.refresh()
-				return session.user
+		dbsess = self.ScopedSession()
+		session = dbsess.query(Session).where(Session.session_token==token).first()
+		if session:
+			session.refresh()
+			dbsess.commit()
+			return session.user
 
 
 	def check_request(self,request):
