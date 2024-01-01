@@ -24,7 +24,7 @@ class Logger:
 		:param string module: Custom category. Log entry will be prepended by this string in the console and be written to this file on disk. Defaults to actual name of the python module.
 		:param integer indent: Indent to be added to entry
 		:param integer importance: Low means important. If this value is higher than the verbosity, entry will not be shown on console.
-		:param string color: Color-codes console output. Can be a hex string, a RGB tuple or the name of a color."""
+		:param string color: Color-codes console output. Can be a hex string, an RGB tuple or the name of a color."""
 
 		now = datetime.datetime.utcnow().strftime(self.timeformat)
 

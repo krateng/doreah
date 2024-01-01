@@ -5,5 +5,4 @@ __all__ = [
 	"logging",
 	"persistence",
 	"regular"
-
 ]
