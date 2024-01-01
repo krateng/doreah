@@ -4,7 +4,6 @@ __all__ = [
 	"control",
 	"io",
 	"logging",
-	"packageutils",
 	"persistence",
 	"regular"
 

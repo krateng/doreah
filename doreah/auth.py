@@ -1,11 +1,7 @@
-from ._internal import DEFAULT, defaultarguments, DoreahConfig
-
-
 import secrets
 import bcrypt
 import time
 from nimrodel import EAPI
-from threading import Lock
 from bottle import response as bottleresponse
 from bottle import request, HTTPResponse, redirect
 from jinja2 import Environment, PackageLoader, select_autoescape
