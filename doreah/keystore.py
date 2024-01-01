@@ -1,5 +1,3 @@
-from ._internal import DoreahConfig
-
 import yaml
 import random
 from jinja2 import Environment, PackageLoader, select_autoescape

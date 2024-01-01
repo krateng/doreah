@@ -2,7 +2,6 @@ import datetime
 import inspect
 import os
 
-from ._internal import gopen
 from ._color import _ANSICOLOR
 
 
@@ -74,8 +73,8 @@ class Logger:
 			# file output
 			if self.logfolder is not None:
 				logfilename = f"{self.logfolder}/{entry['module']}.log"
-				#os.makedirs(os.path.dirname(logfilename), exist_ok=True)
-				with gopen(logfilename,"a") as logfile:
+				os.makedirs(os.path.dirname(logfilename), exist_ok=True)
+				with open(logfilename,"a") as logfile:
 					logfile.write(f"{entry['time']}  {entry['prefix']}{entry['msg']}\n")
 				self.trim(logfilename)
 
