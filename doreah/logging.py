@@ -74,7 +74,7 @@ class Logger:
 			if self.logfolder is not None:
 				logfilename = f"{self.logfolder}/{entry['module']}.log"
 				os.makedirs(os.path.dirname(logfilename), exist_ok=True)
-				with open(logfilename,"a") as logfile:
+				with open(logfilename,"a",encoding="utf-8") as logfile:
 					logfile.write(f"{entry['time']}  {entry['prefix']}{entry['msg']}\n")
 				self.trim(logfilename)
 
