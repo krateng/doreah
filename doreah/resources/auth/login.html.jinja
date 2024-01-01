@@ -1,105 +1,46 @@
 <html>
 
-	{% set chall = get_challenge() %}
-	{% set challenge = chall.challenge %}
-	{% set modulo = chall.modulo %}
-	{% set generator = chall.generator %}
 
 	<head>
 		<script>
-		const CHALLENGE = '{{ challenge }}';
-		const MODULO = {{ modulo }}n;
-		const GENERATOR = {{ generator }}n;
-
-		function pw_to_hex(pw) {
-			var utf8 = unescape(encodeURIComponent(pw));
-			var arr = [];
-			for (var i = 0; i < utf8.length; i++) {
-				arr.push(utf8.charCodeAt(i));
-			}
-			return arr.reduce((output, elem) => (output + ('0' + elem.toString(16)).slice(-2)),'');
-		}
 
 
-		function solve(pw) {
-			pw = pw_to_hex(pw);
-			//console.log("challenge: " + challenge + ", pw: " + pw);
-			//pw = parseInt(pw,16);
-			pw = BigInt("0x" + pw);
-			//challenge = parseInt(challenge,16);
-			challenge = BigInt("0x" + CHALLENGE);
-			modulo = BigInt(MODULO);
-			var res1 = expmod(GENERATOR,pw,modulo);
-			var result = expmod(res1,challenge,modulo);
-			//result = pw.modPow(challenge,modulo)
-			//console.log("result: " + result)
-			//console.log(result)
-			return result.toString(16);
-		}
+		async function auth() {
+		    var username = document.getElementById("user")?.value ?? 'user';
+			var password = document.getElementById("password").value;
 
-		function expmod( base, exp, mod ){
-			if (exp == 0n) return 1n;
-			if (exp % 2n == 0n){
-			//return Math.pow( expmod( base, (exp / 2n), mod), 2n) % mod;
-			return (expmod(base,(exp/2n),mod) ** 2n) % mod;
-			}
-			else {
-			return (base * expmod( base, (exp - 1n), mod)) % mod;
-			}
-		}
+            response = await fetch('/auth/authenticate',{
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user:username,
+                    password:password
+                })
+            })
 
+            if (response.ok){
+                const jsonResponse = await response.json();
+                document.cookie = jsonResponse.cookie_name + "=" + jsonResponse.token;
+                location.reload();
 
-		function update() {
-			pw = document.getElementById("password").value;
-			if (pw == "") {
-				var resp = "";
-			}
-			else {
-				var resp = solve(pw);
-			}
+            }
+            else {
+                const jsonResponse = await response.json();
+                alert("Access denied!")
+            }
 
-			document.getElementById("response").value = resp;
-		}
-
-
-
-
-		function auth() {
-			var response = document.getElementById("response").value;
-			var challenge = document.getElementById("challenge").innerHTML;
-
-		//	xhttpreq("/auth/authenticate",data={"user":0,"response":response,"challenge":challenge},method="POST",callback=checkAuth);
-			xhttp = new XMLHttpRequest();
-			xhttp.onreadystatechange = function() {
-				if (this.readyState == 4) {
-					checkAuth(this);
-				}
-			}
-
-			data = {"user":0,"response":response,"challenge":challenge}
-			xhttp.open("POST","/auth/authenticate", true);
-
-			body = JSON.stringify(data);
-			xhttp.setRequestHeader("Content-Type","application/json");
-			xhttp.send(body);
-
-		}
-
-		function checkAuth(response) {
-			var res = JSON.parse(response.responseText);
-			console.log(res);
-			if (res.hasOwnProperty("token")) {
-				console.log("Login!")
-				var token = res["token"];
-				document.cookie = res["cookie_name"] + "=" + token;
-				//location.assign("/");
-				location.reload();
-			}
 		}
 
 		function enterpress(evt) {
 			if (evt.keyCode === 13) {
-				auth();
+			    if (evt.srcElement.id == 'user') {
+                    document.getElementById('password').focus();
+			    }
+			    else if (evt.srcElement.id == 'password') {
+                    auth();
+                }
 			}
 		}
 		</script>
@@ -181,16 +122,10 @@
 
 	<body>
 		<div class="centered_box">
-			<span class="hide" id="challengeshow" onclick="this.classList.add('hide');document.getElementById('challengeinfo').classList.remove('hide');">Show Challenge</span>
-			<span class="hide" id="challengeinfo" style="font-size:60%;cursor:default;">{{ challenge }}</span>
-			<input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" oninput="update()" onkeyup="enterpress(event)" />
-			<input class="hide" id="response" placeholder="Response" />
+			{% if not lock_user %}<input id="user" name="user" type="text" autocomplete="current-user" placeholder="Username" onkeyup="enterpress(event)" />{% endif %}
+			<input id="password" name="password" type="password" autocomplete="current-password" placeholder="Password" onkeyup="enterpress(event)" />
 			<button id="loginbutton" onclick="auth()">Login</button>
 		</div>
-
-		<span class="hide" id="challenge">{{ challenge }}</span>
-		<span class="hide" id="generator">{{ generator }}</span>
-		<span class="hide" id="modulo">{{ modulo }}</span>
 
 	</body>
 
