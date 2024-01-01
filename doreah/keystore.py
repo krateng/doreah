@@ -23,6 +23,7 @@ class KeyStore:
 		self.file = file
 		self.keys = {}
 		self.save_endpoint = save_endpoint
+		self.key_length = key_length
 		self.load_from_file()
 
 	def __len__(self):
