@@ -183,6 +183,9 @@ class Configuration:
 
 
 	def render_help(self,targetfile,top_text=""):
+		if self.readonly:
+			return
+
 		template = JINJAENV.get_template("settings.md.jinja")
 		txt = template.render({"configuration":self,"top_text":top_text})
 		with open(targetfile,"w") as fd:

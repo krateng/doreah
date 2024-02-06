@@ -1,6 +1,6 @@
 """Module that offers data structures that are kept persistent on the file system"""
 
-import os, shutil
+import errno, os, shutil
 import yaml, json, configparser
 import re, ast
 
@@ -25,8 +25,13 @@ class DiskDict(dict):
 
 		try:
 			self._sync_to_disk()
-		except PermissionError as e:
+		except PermissionError:
 			self.readonly = True
+		except OSError as e:
+			if e.errno == errno.EROFS: # Read-only file system
+				self.readonly = True
+			else:
+				raise
 
 	def _sync_from_disk(self):
 		data = self.handler.load_file(self.filename)
